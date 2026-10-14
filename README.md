@@ -19,7 +19,20 @@ Phases **0–5** are implemented locally: foundation, access, customers/stock, c
 
 **Next:** phase 6 sales/profit reporting and phase 7 release readiness. Charts, profit dashboards and CSV exports are not implemented yet. Live Supabase acceptance remains pending; this is not a finished production dealership system.
 
-No live accounts, Supabase projects, emails or deployments were created during implementation. Supabase Auth/email acceptance must be performed after configuration. The original invoice editor referenced by the starter was not present; see docs/baseline.md.
+The original invoice editor referenced by the starter was not present; see docs/baseline.md.
+
+### Cloud setup progress — 15 October 2026
+
+- Existing Supabase project: `qcmedrrqfkmihoevchiq` (Hydra Motors LTD). The 11 application migrations and `20261015000100_auth_helper_privileges.sql` were applied through the Supabase integration. Do not rerun them manually; inspect the remote migration history before future changes.
+- Verified live: 20 public tables with RLS enabled, three private storage buckets, four default roles, and one confirmed active administrator. Anonymous execution of the profile helper is revoked; authenticated staff retain access.
+- Public signup is disabled; email/password login and email confirmation remain enabled.
+- Local `.env.local` is configured and ignored by Git. It connects to this same cloud database: local changes affect real data. Use a separate Supabase project for disposable testing.
+- Vercel project: `hydra-motors-ltd`. Production URL: `https://hydra-motors-ltd.vercel.app`. The existing Supabase integration supplied its Production keys; `NEXT_PUBLIC_SITE_URL` was added. Deployment verification is still pending.
+- Supabase Site URL points to the production origin. Exact `/auth/confirm`, `/auth/callback` and `/auth/callback?next=/update-password` redirects are configured for production, `localhost:3000` and `127.0.0.1:3000`.
+- Email onboarding/reset remains pending: the current Supabase dashboard requires custom SMTP (or a paid email-template option) before templates can be edited. No SMTP service or paid upgrade was configured. Use dashboard-created confirmed accounts until email delivery/templates are tested.
+- The new app is on Git branch `features/new-version`; `main` still contains the old starter. Deploy the new branch and explicitly select the intended Production branch before relying on automatic deployments.
+
+For normal use, open `/login` and use your administrator email and password. In **Users**, administrators can assign a role and activate a dashboard-created account. Once SMTP is configured, invitations let staff choose their own passwords; new staff still require activation. Complete **Settings → Invoice settings** with real dealership details, no-VAT confirmation and terms before issuing invoices.
 
 ## 1. Run locally
 
@@ -77,6 +90,7 @@ Run each complete file once, in this order:
 9. `supabase/migrations/20261014000575_finance_integrity.sql`
 10. `supabase/migrations/20261014000590_audit_boundaries.sql`
 11. `supabase/migrations/20261014000595_query_indexes.sql`
+12. `supabase/migrations/20261015000100_auth_helper_privileges.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
