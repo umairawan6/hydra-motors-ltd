@@ -1,2 +1,13 @@
-import {login} from './actions';
-export default async function Login({searchParams}:{searchParams:Promise<{error?:string}>}){const params=await searchParams;return <main style={{maxWidth:390,margin:'12vh auto',padding:30,background:'#14263a',borderRadius:16}}><div style={{color:'#38c7dc',fontWeight:900,fontSize:34}}>H / HYDRA</div><h1>Motors Staff Login</h1><p>Driven by Trust. Defined by Quality.</p>{params.error&&<p role="alert" style={{color:'#fca5a5'}}>Invalid credentials. Please try again.</p>}<form action={login} style={{display:'grid',gap:15}}><label>Email<input name="email" type="email" required autoComplete="username" style={{display:'block',width:'100%',padding:12,boxSizing:'border-box'}}/></label><label>Password<input name="password" type="password" required autoComplete="current-password" style={{display:'block',width:'100%',padding:12,boxSizing:'border-box'}}/></label><button style={{background:'#0891b2',color:'white',padding:13,border:0,borderRadius:6}}>Sign in</button></form><small>Access by authorised Hydra Motors staff only.</small></main>}
+import Link from 'next/link';
+import { AuthCard } from '../../components/auth-card';
+import { AuthForm } from '../../components/auth-form';
+import { publicSupabaseConfig } from '../../lib/env';
+export default async function Login({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
+  const params = await searchParams;
+  return <AuthCard title="Welcome back" description="Sign in to your Hydra Motors workspace.">
+    {!publicSupabaseConfig() && <p className="alert"><Link href="/setup">Connect Supabase to enable staff login.</Link></p>}
+    {params.notice === 'password-updated' && <p className="alert success" role="status">Password saved. Sign in with your new password.</p>}
+    {params.error === 'link' && <p className="alert danger" role="alert">This link is invalid or expired. Request a new link.</p>}
+    <AuthForm mode="login" />
+  </AuthCard>;
+}

@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import { AuthCard } from '../../components/auth-card';
+export default function Setup() { return <AuthCard title="Connect your workspace" description="The app is ready for your Supabase configuration."><ol className="setup-list"><li>Create a Supabase project.</li><li>Run all SQL migrations in filename order (see README for upgrades).</li><li>Copy .env.example to .env.local and enter your project URL and publishable key.</li><li>Create and activate your first administrator.</li><li>Restart the development server.</li></ol><p className="muted">Full commands, upgrade instructions and deployment steps are in README.md.</p><Link href="/login" className="button primary">Go to staff login</Link></AuthCard>; }

@@ -1,5 +1,5 @@
--- Run once in Supabase SQL Editor. Requires Supabase Auth enabled.
-create extension if not exists pgcrypto;
+-- Baseline of the original starter; apply only to a fresh database.
+-- gen_random_uuid() is built into the supported PostgreSQL versions.
 create type public.staff_role as enum ('admin','manager','sales','accountant');
 create table public.profiles(id uuid primary key references auth.users(id) on delete cascade,full_name text not null default '',role public.staff_role not null default 'sales',active boolean not null default false,created_at timestamptz not null default now());
 create table public.customers(id uuid primary key default gen_random_uuid(),full_name text not null,email text,phone text,address text,created_at timestamptz not null default now());

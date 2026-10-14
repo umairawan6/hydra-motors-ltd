@@ -1,0 +1,67 @@
+// Schema-derived application types through 20261014000595. Regenerate with npm run db:types after connecting Supabase.
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+type Table<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
+type FinanceInvoiceRow={id:string;sale_id:string;provider_id:string;due_date:string;total:number;status:string;void_reason:string|null;created_at:string};
+type SupplierInvoiceRow={id:string;supplier_name:string;supplier_address:string;supplier_reference:string;total:number;invoice_date:string;due_date:string;description:string;vehicle_id:string|null;cost_treatment:string;status:string;void_reason:string|null;request_key:string;request_data:Json;created_at:string};
+export type Database = {
+  public: {
+    Tables: {
+      finance_providers:Table<{id:string;full_name:string;address:string;email:string;phone:string;archived:boolean;version:number;created_at:string}>;
+      finance_invoices:Table<FinanceInvoiceRow>;
+      finance_settlements:Table<{id:string;invoice_id:string;payment_id:string;created_at:string}>;
+      supplier_invoices:Table<SupplierInvoiceRow>;
+      supplier_payments:Table<{id:string;invoice_id:string;amount:number;method:string;reference:string;kind:string;original_payment_id:string|null;request_key:string;created_by:string;received_at:string}>;
+      supplier_documents:Table<{id:string;invoice_id:string;path:string;ready:boolean;created_at:string}>;
+      profiles: Table<{ id: string; full_name: string; email: string; role: string; active: boolean; created_at: string; updated_at: string }>;
+      roles: Table<{ key: string; name: string; system_role: boolean; created_at: string }>;
+      permissions: Table<{ key: string; description: string }>;
+      role_permissions: Table<{ role_key: string; permission_key: string }>;
+      customers: Table<{ id: string; full_name: string; email: string | null; phone: string | null; address: string | null; created_at: string; archived:boolean; version:number; updated_at:string }>;
+      vehicles: Table<{ id: string; registration: string; vin: string | null; make: string; model: string; model_year: number | null; mileage: number | null; created_at: string; status:string; purchase_date:string|null; version:number; updated_at:string }>;
+      vehicle_costs: Table<{ vehicle_id: string; purchase_cost: number; preparation_cost: number; other_cost: number; updated_at: string; version:number }>;
+      vehicle_photos: Table<{id:string;vehicle_id:string;path:string;ready:boolean;created_at:string}>;
+      billing_settings:Table<{id:number;company_name:string;address:string;registration_number:string;email:string;phone:string;payment_details:string;terms:string;tax_mode:string;approved:boolean;updated_at:string}>;
+      sales: Table<{ id: string; customer_id: string; vehicle_id: string; invoice_number: string | null; sale_price: number; status: string; created_by: string; created_at: string;list_price:number;discount:number;fees:number;fee_description:string;credited_amount:number;version:number;issued_at:string|null;snapshot:Json|null }>;
+      payments: Table<{ id: string; sale_id: string; amount: number; method: string; received_at: string; created_by: string;kind:string;original_payment_id:string|null;request_key:string|null;reference:string;finance_invoice_id:string|null }>;
+      invoices: Table<{ id: string; sale_id: string; invoice_type: string; version: number; document_path: string | null; issued_at: string | null;document_number:string|null;snapshot:Json|null;total:number|null;original_invoice_id:string|null;request_key:string|null;request_data:Json|null;pdf_status:string }>;
+      audit_logs: Table<{ id: number; actor_id: string | null; action: string; entity: string; entity_id: string | null; created_at: string; before_data: Json | null; after_data: Json | null; reason: string | null }>;
+    };
+    Views: {
+      finance_invoice_summary:{Row:FinanceInvoiceRow & {document_number:string|null;balance:number};Relationships:[]};
+      supplier_invoice_summary:{Row:SupplierInvoiceRow & {balance:number};Relationships:[]};
+    };
+    Functions: {
+      can_access_supplier:{Args:{target:string};Returns:boolean};
+      finance_balance:{Args:{target:string};Returns:number};
+      supplier_balance:{Args:{target:string};Returns:number};
+      vehicle_expense_total:{Args:{target:string};Returns:number};
+      save_finance_provider:{Args:{payload:Json;expected_version:number};Returns:string};
+      create_finance_invoice:{Args:{target_sale:string;target_provider:string;invoice_amount:number;due:string;request:string};Returns:string};
+      settle_finance_invoice:{Args:{target:string;settlement_amount:number;settlement_reference:string;request:string};Returns:string};
+      create_supplier_invoice:{Args:{payload:Json;request:string};Returns:string};
+      record_supplier_payment:{Args:{target:string;payment_amount:number;payment_method:string;payment_reference:string;request:string;refund_of?:string|null};Returns:string};
+      void_financial_invoice:{Args:{target:string;invoice_kind:string;reason:string};Returns:undefined};
+      save_billing_settings:{Args:{payload:Json};Returns:undefined};
+      save_sale_draft:{Args:{payload:Json;expected_version:number};Returns:string};
+      issue_sale:{Args:{target:string;expected_version:number;request:string};Returns:string};
+      cancel_sale_draft:{Args:{target:string;expected_version:number};Returns:undefined};
+      sale_balance:{Args:{target:string};Returns:number};
+      can_access_sale:{Args:{target:string};Returns:boolean};
+      record_payment:{Args:{target:string;payment_amount:number;payment_method:string;payment_reference:string;request:string;refund_of?:string|null;source_finance?:string|null};Returns:string};
+      return_credited_vehicle:{Args:{target:string};Returns:undefined};
+      credit_sale:{Args:{target:string;credit_amount:number;reason:string;return_stock:boolean;request:string};Returns:string};
+      set_invoice_pdf:{Args:{target:string;pdf_state:string};Returns:undefined};
+      save_customer:{Args:{payload:Json;expected_version:number};Returns:string};
+      save_vehicle:{Args:{payload:Json;expected_version:number};Returns:string};
+      save_vehicle_costs:{Args:{target_vehicle:string;purchase:number;preparation:number;other:number;expected_version:number};Returns:undefined};
+      is_active: { Args: Record<string, never>; Returns: boolean };
+      has_permission: { Args: { permission: string }; Returns: boolean };
+      effective_permissions: { Args: Record<string, never>; Returns: string[] };
+      set_staff_access: { Args: { target_id: string; target_name: string; target_role: string; target_active: boolean }; Returns: undefined };
+      create_staff_role: { Args: { role_key: string; role_name: string }; Returns: undefined };
+      set_role_permissions: { Args: { target_role: string; requested_permissions: string[] }; Returns: undefined };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+};

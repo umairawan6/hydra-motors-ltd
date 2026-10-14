@@ -1,2 +1,4 @@
-import type { ReactNode } from 'react';
-export default function RootLayout({children}:{children:ReactNode}){return <html lang="en"><body style={{margin:0,background:'#0b1420',color:'#e6f2fa',fontFamily:'Arial,sans-serif'}}>{children}</body></html>}
+import type { Metadata } from 'next';
+import './globals.css';
+export const metadata: Metadata = { title: { default: 'Hydra Motors | Staff portal', template: '%s | Hydra Motors' }, description: 'Hydra Motors dealership workspace', robots: { index: false, follow: false } };
+export default function RootLayout({ children }: { children: React.ReactNode }) { return <html lang="en"><body>{children}</body></html>; }

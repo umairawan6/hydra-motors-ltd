@@ -1,0 +1,9 @@
+import Link from 'next/link';
+import { requireStaff } from '../../../lib/auth/session';
+import { PAGE_SIZE, pageNumber } from '../../../lib/pagination';
+export default async function AuditLog({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const { db } = await requireStaff('audit.read'); const page = pageNumber((await searchParams).page);
+  const { data, error, count } = await db.from('audit_logs').select('id,actor_id,action,entity,entity_id,created_at', { count: 'exact' }).order('created_at', { ascending: false }).order('id', { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  if (error) throw new Error('Unable to load audit activity.');
+  return <><div className="page-heading"><div><p className="eyebrow">ACCOUNTABILITY</p><h1>Activity log</h1><p className="muted">Database-recorded staff and role changes. Records cannot be edited from the app.</p></div></div><section className="card">{!data?.length ? <div className="empty-state">No access changes recorded yet.</div> : <div className="table-scroll"><table><thead><tr><th>When</th><th>Action</th><th>Record type</th><th>Actor ID</th></tr></thead><tbody>{data.map(item => <tr key={item.id}><td>{new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at))}</td><td>{item.action}</td><td>{item.entity}</td><td>{item.actor_id ?? 'System / setup'}</td></tr>)}</tbody></table></div>}<div className="pagination">{page > 1 ? <Link className="text-link" href={`/dashboard/audit?page=${page - 1}`}>Previous</Link> : <span />}<span className="muted small">Page {page}</span>{page * PAGE_SIZE < (count ?? 0) ? <Link className="text-link" href={`/dashboard/audit?page=${page + 1}`}>Next</Link> : <span />}</div></section></>;
+}
