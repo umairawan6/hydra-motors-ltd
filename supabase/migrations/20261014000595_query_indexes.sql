@@ -1,0 +1,10 @@
+begin;
+create index payments_sale_idx on public.payments(sale_id);
+create index payment_refunds_idx on public.payments(original_payment_id) where kind='refund';
+create index finance_settlements_invoice_idx on public.finance_settlements(invoice_id);
+create index supplier_payments_invoice_idx on public.supplier_payments(invoice_id);
+create index supplier_refunds_idx on public.supplier_payments(original_payment_id) where kind='refund';
+create index allocated_supplier_cost_idx on public.supplier_invoices(vehicle_id) where status='open' and cost_treatment='additional';
+create index photos_vehicle_idx on public.vehicle_photos(vehicle_id);
+create index supplier_documents_invoice_idx on public.supplier_documents(invoice_id);
+commit;
