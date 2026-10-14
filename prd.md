@@ -1,6 +1,6 @@
 # Hydra Motors — Product requirements
 
-Status: phases 0–2 implemented locally, 14 October 2026; live Supabase acceptance pending. See project-phases.md.
+Status: phases 0–5 implemented locally; live Supabase acceptance pending. See project-phases.md.
 Purpose: turn the existing starter into a persistent dealership management app while preserving the approved UI and workflows.
 
 ## Scope and assumptions
@@ -9,6 +9,7 @@ Purpose: turn the existing starter into a persistent dealership management app w
 - Financial invoices means finance-provider invoices plus supplier/expense invoices; user confirmed both on 14 October 2026.
 - Preserve the available navy/cyan UI. The older HTML invoice editor mentioned in README is absent: recover it before claiming visual parity.
 - Exclude public marketplace, payment gateway, bank integration, multi-dealership tenancy and full accounting ledger from MVP.
+- User selected no VAT initially. Issuance requires approved dealership details/terms; VAT and margin-scheme calculations remain outside the current implementation.
 
 ## Features and acceptance criteria
 | Module | Requirements | Acceptance |

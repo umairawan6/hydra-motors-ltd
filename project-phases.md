@@ -1,8 +1,10 @@
 # Hydra Motors — Step-by-step creation phases
 
-Current state: phases 0–2 implemented locally. Phase 0 evidence is in docs/baseline.md; phase 1 build and fresh/upgrade database checks pass; phase 2 local RLS/RPC checks pass. Live Supabase Auth/email and deployed browser acceptance remain pending configuration. Phases 3–7 are not implemented.
+Current state: phases 0–5 implemented locally. Customers/stock, customer invoices and finance/supplier workflows now use permission-checked database mutations. Live Supabase Auth/Storage, authenticated browser acceptance and independent-client concurrency checks remain pending configuration. Phases 6–7 are not implemented.
 
-Local validation: 42 tests, lint, TypeScript, production build and clean-install dry run passed. Login was checked at desktop and 390px mobile width. Full release acceptance is not claimed without a configured Supabase project.
+Local validation: 75 tests, lint, TypeScript and production build passed. Fresh and legacy upgrades are exercised in embedded PostgreSQL. Invoice PDFs were rendered for visual inspection, including long terms. Full release acceptance is not claimed without a configured staging Supabase project.
+
+Phase 3 local evidence: stock.test.ts covers persistent records, stale edits, normalized uniqueness, restricted costs and private-photo RLS. Phase 4: sales.test.ts and pdf.test.ts cover issuance, snapshots, retries, payment/credit/refund balances and PDF rendering. Phase 5: finance.test.ts and finance-integrity.test.ts cover settlement allocation, debt reservations, supplier cost counting, replacement history, returns and migration preservation. See README.md for required live checks.
 
 | Phase | Steps in order | Exit criteria |
 |---|---|---|

@@ -4,7 +4,7 @@ Next.js App Router + React + TypeScript + Supabase PostgreSQL/Auth. The navy/cya
 
 ## What is implemented
 
-First three planned phases **0, 1 and 2**: baseline, application foundation and access control.
+Phases **0–5** are implemented locally: foundation, access, customers/stock, customer invoicing and financial invoices.
 
 - Responsive staff portal, login, password reset/setup, logout and session refresh.
 - Database-backed overview; no fabricated sales/customer/stock numbers.
@@ -12,8 +12,12 @@ First three planned phases **0, 1 and 2**: baseline, application foundation and 
 - Server-side authorization plus database Row Level Security (RLS).
 - Audited access changes, self-access protection and at least one active administrator preserved through app workflows.
 - Versioned SQL migrations, typed data access, lint/typecheck/tests and production build.
+- Customers and vehicle stock: create/edit/archive, search, status filters, pagination, optimistic edit versions, restricted costs and private photos.
+- Customer sale drafts, discounts/charges, atomic issue-time numbering and stock transition, immutable snapshots, PDF storage, receipts/deposits, refunds, credits and stock returns.
+- Finance-provider contacts, collection invoices linked to existing sales, settlement allocations, remittance references, due/paid filters and void history.
+- Supplier bills, payments/refunds, private attachments and explicit vehicle cost allocation without adding settled expenses again.
 
-**Next:** phase 3 customer/vehicle CRUD; phases 4–6 invoices, payments, finance/expenses and reporting. These modules are not implemented yet. Financial writes are disabled until safe transactional workflows are added. This is not a finished production dealership system.
+**Next:** phase 6 sales/profit reporting and phase 7 release readiness. Charts, profit dashboards and CSV exports are not implemented yet. Live Supabase acceptance remains pending; this is not a finished production dealership system.
 
 No live accounts, Supabase projects, emails or deployments were created during implementation. Supabase Auth/email acceptance must be performed after configuration. The original invoice editor referenced by the starter was not present; see docs/baseline.md.
 
@@ -31,6 +35,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Without Supabase variables, the app displays setup instructions. Complete the sections below, fill `.env.local`, then restart the server. Never overwrite an existing `.env.local` containing your keys.
 
+Stop any existing production preview before starting development on port 3000. If you use another port, update `NEXT_PUBLIC_SITE_URL` and the corresponding Supabase redirect URLs. After changing environment variables for a production preview, rebuild before `npm run start`.
+
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
@@ -42,12 +48,12 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 |---|---|
 | NEXT_PUBLIC_SUPABASE_URL | Project URL from Supabase project settings |
 | NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | Browser-safe publishable key; RLS protects data |
-| SUPABASE_SECRET_KEY | Server-only privileged key, required only to send staff invitations |
+| SUPABASE_SECRET_KEY | Server-only key for staff invitations and immutable invoice PDF uploads |
 | NEXT_PUBLIC_SITE_URL | Canonical app origin for invite/reset redirects; required, no path |
 
 Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are accepted as fallbacks. Never put a privileged key in a `NEXT_PUBLIC_` variable. Keep local env files out of Git. Public variables must be set at build time on Vercel.
 
-If you prefer not to configure a privileged app key yet, create users through the Supabase dashboard and activate them in the app; the invite form explains why it is unavailable.
+Without a privileged app key, you can create users through the Supabase dashboard and activate them in the app. PDF generation/storage and app invitations require that key. Financial database mutations use the authenticated user's client and permission-checked RPCs, never the privileged client. The PDF route checks invoice access before using the privileged storage uploader.
 
 ## 2. Create and connect Supabase
 
@@ -62,6 +68,17 @@ Run each complete file once, in this order:
 
 1. `supabase/migrations/20261014000100_baseline.sql`
 2. `supabase/migrations/20261014000200_access.sql`
+3. `supabase/migrations/20261014000300_stock.sql`
+4. `supabase/migrations/20261014000350_stock_storage.sql`
+5. `supabase/migrations/20261014000400_sales.sql`
+6. `supabase/migrations/20261014000450_invoice_storage.sql`
+7. `supabase/migrations/20261014000500_finance.sql`
+8. `supabase/migrations/20261014000550_supplier_storage.sql`
+9. `supabase/migrations/20261014000575_finance_integrity.sql`
+10. `supabase/migrations/20261014000590_audit_boundaries.sql`
+11. `supabase/migrations/20261014000595_query_indexes.sql`
+
+Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
 The access migration runs in a transaction. Stop and investigate any error; do not keep executing snippets from a failed migration. SQL Editor does not automatically record CLI migration history; see the CLI section before switching methods.
 
@@ -71,6 +88,9 @@ The access migration runs in a transaction. Stop and investigate any error; do n
 2. **Skip 20261014000100** because its tables already exist.
 3. Run **20261014000200_access.sql once**. It preserves original records and active roles, migrates the enum to role references, and replaces fixed-role policies with permissions.
 4. Existing active admins remain active. If one exists, do not run the bootstrap script again.
+5. Apply every migration from **00300 onward** in filename order. If phases 0–2 were already set up, start at 00300 and do not rerun 00100 or 00200.
+
+Existing sale invoice numbers and records are retained; versioned legacy invoice metadata receives a version suffix to distinguish records. The upgrade does not invent historical invoice snapshots or totals. Legacy documents without snapshots cannot be generated as PDFs or credited by the new workflow; retain their original documents and reconcile them separately. New drafts should be edited/saved before issuing.
 
 If your existing database has custom tables, policies or role changes beyond the starter, review the migration against that schema first. Do not reset an existing database to fix migration errors.
 
@@ -154,11 +174,57 @@ The bootstrap script refuses to run if an active admin already exists. Normal ac
 | Sales | Operational customers/vehicles and own sales/invoices |
 | Accountant | Read customers/vehicles/all sales; costs, finance, payments and profit reporting |
 
-Permissions for future features are stored now, but those features appear only when implemented. Managers and sales staff cannot read purchase costs/profit by default.
+Managers and sales staff cannot read purchase costs or allocated supplier costs by default. Profit reporting remains phase 6. Supplier payment/refund recording requires both `finance.manage` and `payments.manage`; vehicle allocation requires `costs.write`, and viewing allocated bills requires `costs.read`.
 
 In **Roles & permissions**, create a custom role or adjust default permissions. New roles start with zero permissions. Administrator user/role/audit controls cannot be removed. Delegated user/role managers cannot grant greater access than they have or elevate themselves. All data access rechecks active state and permissions; deactivation blocks data access even before an Auth token expires. UI visibility is only a convenience; RLS and RPC checks enforce access.
 
-Activity log shows database-recorded access changes. Before/after snapshots are stored in the database; log writes and edits are unavailable to authenticated app clients.
+Activity log includes access and business changes. Before/after snapshots are stored in the database; log writes and edits are unavailable to authenticated app clients. Audit visibility also checks the underlying sale, finance and cost permissions so an audit grant does not expose restricted costs or unrelated sales.
+
+## Dealership workflows (phases 3–5)
+
+### Customers and stock
+
+1. Add customers under **Customers**. Enter a billing address before issuing a sale; archive records rather than deleting referenced history.
+2. Add vehicles under **Vehicle stock**. Registration is normalized to uppercase without spaces. Use available/reserved/archived; only financial issue/return workflows can transition sold stock.
+3. Enter base purchase/preparation/other costs with a cost-authorized account. Conflicting edits are rejected; refresh before reapplying changes.
+4. Upload vehicle photos. Allowed: JPG, PNG, WebP, up to 5 MB. No SVG uploads. Completed photo metadata is immutable.
+
+### Customer sales and PDFs
+
+1. As administrator, open **Invoice settings**. Save actual company name, address, registration number, contact/payment details and approved terms. Confirm **no VAT**, as selected for this implementation. VAT and margin-scheme calculation are not supported yet.
+2. Create a sale, search/select an active customer and available/reserved vehicle, then enter vehicle price, discount and optional described charges. **Save the draft before issuing**; issuance uses saved values.
+3. Issue the invoice with explicit confirmation. One database transaction allocates a unique number, snapshots company/customer/vehicle/prices, marks the sale issued and stock sold, and records the audit trail.
+4. Open the PDF link. The trusted server renders the immutable snapshot and stores it privately. Generation failures can be retried without changing invoice number or issuing another sale. PDFs show issue-time values; current balances are on the sale screen.
+5. Record receipts/deposits after issuance with an Admin/Accountant or other payment-authorized role. Only cleared receipts are recorded in this MVP; there is no bank/card integration. Refunds must link to an original receipt and cannot exceed its unrefunded amount.
+6. Cancel unissued drafts to void them. Correct issued sales using linked credit notes; a full credit reverses the sale financially while preserving the original issued document. Net sale revenue for phase 6 must use `sale_price - credited_amount`, without subtracting those same notes again.
+7. A full credit can return stock if receipts were already refunded. If you credit first and refund later, use **Return fully credited vehicle** afterward. Outstanding finance invoices must be reconciled/voided, and a newer sale prevents an old return action from changing the vehicle.
+
+Invoice, payment and supplier-write request keys are preserved during submission retries. Do not intentionally reuse a key for different input. Financial mutations are serialized with a database advisory lock; independently running live-client concurrency tests remain a release acceptance check.
+
+### Finance-provider invoices
+
+1. Add provider contacts under **Finance invoices → Providers**.
+2. Select an issued customer sale, provider, amount and due date. Finance invoices reserve the unallocated outstanding debt; they do not create a new sale or additional revenue.
+3. Record remittances from the finance invoice screen. The receipt and its finance allocation are committed together and reduce the linked customer's balance once. Repeating the same request does not add another receipt.
+4. Ordinary customer receipts cannot consume debt reserved for an open provider invoice. Record deposits first, or reconcile/void and replace the provider claim before changing the allocation. Credits cannot leave finance claims exceeding the remaining debt.
+5. Record provider refunds against their original receipt on the customer sale screen. Finance balances reflect those refunds. Void an unpaid/fully refunded provider invoice with a reason before replacing it; the original PDF/history remain available.
+
+### Supplier bills and expense allocation
+
+1. Record the supplier's actual bill/reference, invoice date, due date, total and description. Supplier totals are recorded as billed costs; no input-VAT recovery calculation is implemented.
+2. Select **Overhead** without a vehicle, **Additional vehicle expense** for a new cost, or **Already included in base costs** if that amount is already in purchase/preparation/other costs.
+3. Additional open supplier bills contribute once to the vehicle's allocated-expense total. Payments/refunds do not create another cost. Included-in-base bills and overhead are excluded from that vehicle total.
+4. Record supplier payments/refunds against the bill, with refunds linked to the original payment. Overpayments and excessive refunds are rejected.
+5. Attach private PDF/JPG/PNG/WebP bills or receipts, maximum 5 MB. Completed attachments cannot be replaced through the app. The supplier's externally issued document is retained; the app does not invent a supplier VAT invoice.
+6. Void erroneous bills only after payments have been refunded, then record a replacement. Voided originals and attachments are retained; only one open bill per normalized supplier/reference is allowed.
+
+Financial mutations record events; they do not transfer money, charge cards or email invoices. The operator records completed real-world transactions.
+
+### Private storage
+
+Buckets are created by migrations: `vehicle-photos`, `invoice-pdfs`, `supplier-documents`. Keep all three private. Files are delivered through authenticated application routes with `private, no-store` headers and RLS checks, rather than public links. Uploads are checked for size and supported file signatures; bucket MIME limits are also enforced. PDFs are uploaded only by the server from immutable snapshots; authenticated clients have no PDF overwrite/delete policy.
+
+Upload metadata is created before object storage and finalized afterward. Interrupted network requests can leave pending rows or unreferenced objects; review and clean up those pending assets through a privileged maintenance process before release. Do not delete finalized invoice documents as upload cleanup.
 
 ## 6. Checks and database types
 
@@ -168,7 +234,7 @@ npm run build
 npm run start
 ```
 
-`check` runs lint, typecheck and tests. Tests use PGlite (embedded PostgreSQL) to exercise actual grants, RLS and RPCs with a minimal Auth identity fixture; no live credentials or Docker needed. They cover fresh/upgrade migrations, inactive users, sales ownership, restricted costs, access mutations and audits. These tests do not prove live Supabase email, session refresh, storage or deployment behavior.
+`check` runs lint, typecheck and tests. Tests use PGlite (embedded PostgreSQL) to exercise actual grants, RLS and RPCs with minimal Auth/Storage identity fixtures; no live credentials or Docker needed. They cover fresh/upgrade migrations, roles, stale edits, stock uniqueness, atomic issue/retry behavior, balances, credits/refunds, finance allocation and expense counting. PDF tests generate clearly fictitious samples under ignored `tmp/pdfs/`; these were rendered for visual inspection. Local SQL fixtures do not prove live Supabase Auth, upload service behavior, independent-client concurrency or deployment behavior.
 
 `lib/supabase/database.types.ts` contains schema-derived starter types. After connecting a project and applying migrations, generate authoritative types using an installed, logged-in Supabase CLI:
 
@@ -195,7 +261,7 @@ ESLint 9 is pinned for compatibility with Next.js's bundled lint plugins. Move t
 7. Configure the custom domain in Vercel and add the DNS records it provides. Update both app and Auth origins/redirects to the canonical domain and redeploy.
 8. Use a separate staging Supabase project for Vercel Preview. Prefer a stable staging domain for email links; do not allow broad production redirect wildcards or use production customer data in previews.
 
-Before launch, manually verify login/logout, refresh after session expiry, reset/invite links, inactive-account denial, all four roles, direct unauthorized page/API access and permission changes. Verify backups/restoration and error monitoring. Live Supabase acceptance remains pending until those checks run against your configured project.
+Before launch, manually verify login/logout, session refresh, reset/invite links, inactive-account denial, all four roles, direct page/RPC/Storage denial, customer/stock persistence, two-client edit/issuance races, PDF generation/retry and finance/supplier reconciliation. Verify backups/restoration and monitoring. Live acceptance remains pending until these checks run against your configured staging Supabase project.
 
 Other Node hosting can run `npm ci`, `npm run build`, then `npm run start` behind HTTPS with the same env values and Auth URLs. Static export hosting is unsuitable for this authenticated server app.
 
@@ -212,18 +278,25 @@ Other Node hosting can run `npm ci`, `npm run build`, then `npm run start` behin
 | Works locally but not on Vercel | Env values set before build, deployment uses correct DB, exact Auth URLs |
 | Baseline reports table already exists | Stop; use the existing-starter upgrade path, never rerun baseline |
 | CLI type generation fails | CLI on PATH, logged in, valid project reference and permissions |
+| Stock migration rejects duplicate keys | Resolve normalized registration/VIN collisions before migrating; preserve history |
+| Invoice cannot be issued | Save draft, active customer with billing address, eligible stock, approved company settings |
+| PDF fails / retry message | Server-only key, private invoice bucket, complete new snapshot; retry the same PDF link |
+| Receipt/credit blocked by finance allocation | Reconcile or void the provider claim first; use the finance settlement screen |
+| Supplier allocation rejected | Overhead requires no vehicle; allocated treatments require a vehicle and cost permissions |
 
 ## Project map
 
 ```text
-app/                    Login, setup, auth callbacks, dashboard/users/roles/audit
+app/                    Login, setup, auth callbacks, customers, stock, sales, finance, expenses and admin screens
 components/             Shared forms, navigation and buttons
 lib/auth/               Server authorization and permission definitions
 lib/supabase/           Server/admin clients and schema types
+lib/business/           Shared business input validation, file checks and formatting
+lib/invoices/           Immutable-snapshot PDF renderer
 styles/                 Design tokens
-supabase/migrations/    Baseline and access upgrade
+supabase/migrations/    Versioned baseline, access, stock, financial and Storage migrations
 supabase/bootstrap-admin.sql  One-time first-admin setup
-tests/                  Validation and PostgreSQL authorization checks
+tests/                  PostgreSQL workflow/permission tests and PDF renderer checks
 docs/baseline.md         Current inventory, decisions and limitations
 ```
 

@@ -98,6 +98,7 @@ declare sale public.sales; settings public.billing_settings; customer public.cus
   if found then if previous.invoice_type<>'customer' or previous.sale_id<>target then raise exception 'Idempotency key reused'; end if; return previous.id; end if;
   select * into sale from public.sales where id=target for update;
   if sale.status<>'draft' or sale.version<>expected_version then raise exception 'Draft changed or already issued'; end if;
+  if sale.sale_price<=0 or sale.sale_price<>sale.list_price-sale.discount+sale.fees then raise exception 'Invalid money amount'; end if;
   select * into settings from public.billing_settings where id=1 and approved; if not found then raise exception 'Invoice settings are not approved'; end if;
   select * into customer from public.customers where id=sale.customer_id and not archived for share; if not found or coalesce(trim(customer.address),'')='' then raise exception 'Customer requires an active record and billing address'; end if;
   select * into vehicle from public.vehicles where id=sale.vehicle_id for update; if vehicle.status not in ('available','reserved') then raise exception 'Vehicle is not available'; end if;

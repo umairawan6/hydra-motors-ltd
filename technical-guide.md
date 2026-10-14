@@ -1,18 +1,17 @@
 # Hydra Motors — Technical guide
 
-Status: phases 0–2 implemented locally; live Supabase acceptance pending. Remaining business modules follow project-phases.md.
+Status: phases 0–5 implemented locally; live Supabase acceptance pending. Reporting and release readiness follow project-phases.md.
 
 ## Stack
 - Next.js 16.4.1 App Router + React 19.3.1 + TypeScript; dependencies pinned in package-lock.json.
 - Supabase PostgreSQL, Auth and private Storage; SQL migrations and generated database types.
 - CSS variables for shared design tokens and responsive forms; Zod for validation. Tailwind/headless components remain optional for later complex screens.
 - React Hook Form only for complex invoice forms; Server Components for reads, Server Actions for mutations, Route Handlers for downloads/webhooks when needed.
-- @react-pdf/renderer for invoice PDFs; Recharts for authorized reports; Vitest for business rules, Playwright for critical browser flows.
+- @react-pdf/renderer 4.9.0 for invoice PDFs; Vitest with PGlite for database/business rules. Recharts/reporting and live browser automation remain for phases 6–7.
 - Vercel deployment, separate staging/production Supabase projects, structured logs and error monitoring. No separate API server or ORM needed for MVP.
 
 ## Existing gaps
-The original Next 15 starter has been upgraded. Current app includes shared UI, session refresh, server authorization, role management and audit screens. SQL history is now under supabase/migrations. Missing: integrated invoice UI, customer/stock CRUD, safe issuance/payment APIs, PDFs and reports. Live Supabase Auth/email checks require configured credentials.
-Existing sales.vehicle_id uniqueness prevents historical resale; change to transaction-enforced active-sale rules before building sales. Existing draft-update policy is insufficient for immutable ownership/vehicle fields; use explicit database constraints and controlled mutations.
+The original starter has been upgraded with customers/stock, draft/issued sales, PDFs, payment/credit/refund events, provider settlements and supplier invoices. SQL history is under supabase/migrations. Active-sale uniqueness and controlled RPCs replace unrestricted starter mutations. Remaining gaps: reporting, production hardening and live Supabase Auth/Storage/browser acceptance.
 
 ## Data model evolution
 | Entity | Proposed changes |
@@ -28,7 +27,7 @@ Existing sales.vehicle_id uniqueness prevents historical resale; change to trans
 | payments / payment_allocations | Cleared/refunded events, external reference, idempotency key, allocation across invoices; no destructive edits |
 | invoice_sequences / audit_logs | Atomic numbering by document series; immutable actor/action/before/after/reason records |
 
-Use UUID keys, foreign keys, decimal money, constraints, created_at/updated_at and indexes matching queries. Store only canonical costs; expense allocations must not also be added manually to preparation/other cost totals.
+Implemented financial rows use UUIDs, foreign keys, decimal money, constraints and query indexes. Supplier invoices explicitly distinguish additional, included-in-base and overhead treatments; settlements do not create new expenses. The wider target model above remains guidance for future expansion, not a claim that every proposed table is implemented.
 
 ## Security and request flow
 1. Validate session with Supabase SSR server client; implement cookie refresh using the framework-version-appropriate middleware/proxy integration.
