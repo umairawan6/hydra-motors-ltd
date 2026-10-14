@@ -23,16 +23,23 @@ The original invoice editor referenced by the starter was not present; see docs/
 
 ### Cloud setup progress — 15 October 2026
 
-- Existing Supabase project: `qcmedrrqfkmihoevchiq` (Hydra Motors LTD). The 11 application migrations and `20261015000100_auth_helper_privileges.sql` were applied through the Supabase integration. Do not rerun them manually; inspect the remote migration history before future changes.
+- Existing Supabase project: `qcmedrrqfkmihoevchiq` (Hydra Motors LTD). The 11 application migrations and `20261015000100_auth_helper_privileges.sql` were applied through the Supabase integration. Remote history versions/names were aligned with the repository filenames for future CLI migrations. Do not rerun them manually; inspect the remote migration history before future changes.
 - Verified live: 20 public tables with RLS enabled, three private storage buckets, four default roles, and one confirmed active administrator. Anonymous execution of the profile helper is revoked; authenticated staff retain access.
 - Public signup is disabled; email/password login and email confirmation remain enabled.
 - Local `.env.local` is configured and ignored by Git. It connects to this same cloud database: local changes affect real data. Use a separate Supabase project for disposable testing.
-- Vercel project: `hydra-motors-ltd`. Production URL: `https://hydra-motors-ltd.vercel.app`. The existing Supabase integration supplied its Production keys; `NEXT_PUBLIC_SITE_URL` was added. Deployment verification is still pending.
+- Vercel project: `hydra-motors-ltd`. Live production URL: **https://hydra-motors-ltd.vercel.app**. The existing Supabase integration supplied its Production keys; `NEXT_PUBLIC_SITE_URL` was added. Vercel reported Ready, and the owner successfully signed in as Administrator on the public production domain. Staff management loaded successfully. Local Storage API access was verified with the saved server key; live invoice/upload workflows remain untested.
 - Supabase Site URL points to the production origin. Exact `/auth/confirm`, `/auth/callback` and `/auth/callback?next=/update-password` redirects are configured for production, `localhost:3000` and `127.0.0.1:3000`.
-- Email onboarding/reset remains pending: the current Supabase dashboard requires custom SMTP (or a paid email-template option) before templates can be edited. No SMTP service or paid upgrade was configured. Use dashboard-created confirmed accounts until email delivery/templates are tested.
-- The new app is on Git branch `features/new-version`; `main` still contains the old starter. Deploy the new branch and explicitly select the intended Production branch before relying on automatic deployments.
+- Email onboarding/reset is deferred by the owner: the current Supabase dashboard requires custom SMTP (or a paid email-template option) before templates can be edited. No SMTP service or paid upgrade was configured. Do not rely on app invitations or password-reset emails until SMTP, the templates below and delivery are tested.
+- Vercel's Production branch is **`features/new-version`**, which is published to GitHub. Push reviewed changes to that branch to deploy automatically. `main` still contains the old starter. If you later merge the app into `main`, change Vercel Settings → Environments → Production → Branch Tracking to `main` at the same time.
 
 For normal use, open `/login` and use your administrator email and password. In **Users**, administrators can assign a role and activate a dashboard-created account. Once SMTP is configured, invitations let staff choose their own passwords; new staff still require activation. Complete **Settings → Invoice settings** with real dealership details, no-VAT confirmation and terms before issuing invoices.
+
+**Add staff while email is deferred:**
+1. In Supabase → Authentication → Users → Add user → Create new user, enter the staff email. The account owner should set a unique password themselves; keep Auto confirm user checked for this administrator-managed setup. Avoid shared passwords.
+2. Sign in to the app as an administrator and open **Staff accounts**. Find the new inactive account, choose Manager, Sales or Accountant as appropriate, enable Active and save.
+3. The staff member can sign in at the live `/login` page with their own credentials. Review **Roles & permissions** before changing role capabilities. Administrator has full access; assign it only when needed.
+
+Local startup with the configured environment: `npm ci`, `npm run dev`, then open `http://127.0.0.1:3000`. If the production preview is already using port 3000, stop it before starting development. Both local and hosted apps currently use the same Supabase project.
 
 ## 1. Run locally
 
