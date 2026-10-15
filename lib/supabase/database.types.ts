@@ -6,6 +6,8 @@ type SupplierInvoiceRow={id:string;supplier_name:string;supplier_address:string;
 export type Database = {
   public: {
     Tables: {
+      test_reset_control:Table<{id:number;enabled:boolean}>;
+      test_reset_jobs:Table<{id:string;actor_id:string;counts:Json;assets:Json;created_at:string;completed_at:string|null}>;
       finance_providers:Table<{id:string;full_name:string;address:string;email:string;phone:string;archived:boolean;version:number;created_at:string}>;
       finance_invoices:Table<FinanceInvoiceRow>;
       finance_settlements:Table<{id:string;invoice_id:string;payment_id:string;created_at:string}>;
@@ -31,6 +33,8 @@ export type Database = {
       supplier_invoice_summary:{Row:SupplierInvoiceRow & {balance:number};Relationships:[]};
     };
     Functions: {
+      begin_test_data_reset:{Args:{actor:string;request:string;confirmation:string};Returns:Json};
+      complete_test_data_reset:{Args:{actor:string;target:string};Returns:undefined};
       can_access_supplier:{Args:{target:string};Returns:boolean};
       finance_balance:{Args:{target:string};Returns:number};
       supplier_balance:{Args:{target:string};Returns:number};

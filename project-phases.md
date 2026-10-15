@@ -24,6 +24,9 @@ Live verification of e273eb5: Vercel Production reported Ready. Authenticated re
 | 7 — Production readiness | Critical end-to-end and RLS tests; responsive/accessibility review; logs; backup/restore; staging acceptance; approved deployment | Stock → sale → payment → PDF works; restore verified; required tax/terms approved; release checklist passes |
 
 ## Validation fixtures
+
+Testing maintenance (15 October 2026): added an administrator-only test reset with explicit confirmation, matching-project environment gate and database switch. Migration 20261015152512 was applied to the owner's confirmed test database and its switch enabled. Transactional business cleanup preserves staff/settings/number counters; durable Storage cleanup supports retry. No live reset was executed. Local validation: 93 tests, lint, typecheck and build passed. Phases 6–7 remain pending.
+
 - One £10,000 sale, £7,000 purchase and £500 preparation cost: £2,500 gross profit before tax adjustments/overhead; £2,000 cleared payment leaves £8,000 outstanding.
 - Finance provider invoice for that sale does not increase £10,000 sales revenue; provider settlement only reduces outstanding balance.
 - A linked £500 credit adjusts revenue/balance consistently; refunds remain independently tracked.

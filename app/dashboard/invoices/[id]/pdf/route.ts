@@ -12,5 +12,9 @@ export async function GET(_request:Request,{params}:{params:Promise<{id:string}>
   try {const bytes=await renderInvoice(invoice.snapshot);const admin=supabaseAdmin();const uploaded=await admin.storage.from('invoice-pdfs').upload(path,bytes,{contentType:'application/pdf',upsert:false});
     if(uploaded.error) {const existing=await admin.storage.from('invoice-pdfs').download(path);if(!existing.data || existing.error) throw new Error('Unable to store PDF');const marked=await db.rpc('set_invoice_pdf',{target:id,pdf_state:'ready'});if(marked.error) throw new Error('Unable to finalize PDF');return new Response(new Uint8Array(await existing.data.arrayBuffer()),{headers});}
     const marked=await db.rpc('set_invoice_pdf',{target:id,pdf_state:'ready'});if(marked.error) throw new Error('Unable to finalize PDF');return new Response(new Uint8Array(bytes),{headers});
-  } catch {await db.rpc('set_invoice_pdf',{target:id,pdf_state:'failed'});return new Response('PDF generation failed. Retry this link; the invoice will not be reissued or renumbered.',{status:503});}
+  } catch {
+    // A reset may delete an invoice after this request read its snapshot but before upload.
+    // Remove only that now-orphaned immutable path; retain documents if the invoice still exists.
+    try {const admin=supabaseAdmin();const existing=await admin.from('invoices').select('id').eq('id',id).maybeSingle();if(!existing.error && !existing.data) await admin.storage.from('invoice-pdfs').remove([path]);} catch { /* A pending reset manifest can retry cleanup. */ }
+    await db.rpc('set_invoice_pdf',{target:id,pdf_state:'failed'});return new Response('PDF generation failed. Retry this link; the invoice will not be reissued or renumbered.',{status:503});}
 }

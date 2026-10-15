@@ -98,6 +98,7 @@ Run each complete file once, in this order:
 10. `supabase/migrations/20261014000590_audit_boundaries.sql`
 11. `supabase/migrations/20261014000595_query_indexes.sql`
 12. `supabase/migrations/20261015000100_auth_helper_privileges.sql`
+13. `supabase/migrations/20261015152512_admin_test_data_reset.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
@@ -293,6 +294,31 @@ ESLint 9 is pinned for compatibility with Next.js's bundled lint plugins. Move t
 Before launch, manually verify login/logout, session refresh, reset/invite links, inactive-account denial, all four roles, direct page/RPC/Storage denial, customer/stock persistence, two-client edit/issuance races, PDF generation/retry and finance/supplier reconciliation. Verify backups/restoration and monitoring. Live acceptance remains pending until these checks run against your configured staging Supabase project.
 
 Other Node hosting can run `npm ci`, `npm run build`, then `npm run start` behind HTTPS with the same env values and Auth URLs. Static export hosting is unsuitable for this authenticated server app.
+
+## Admin-only test data reset
+
+While this workspace contains only disposable test data, administrators can open **Invoice settings → Manage test data** (`/dashboard/settings/test-data`). Check the displayed counts, stop other users from editing, type `RESET TEST DATA` and tick the permanent-removal confirmation before submitting. Adding this feature does not run a reset.
+
+Reset permanently clears customers, vehicles (including archived stock), sales, invoices/credits, payments/refunds, finance providers/settlements, supplier invoices/payments, costs, uploaded files and related business audit snapshots. Staff accounts, roles, company settings, security/reset audit history and invoice number counters remain. Invoice numbers are never reused. Local and cloud applications connected to the same database share the reset.
+
+Three server-side conditions are required: active administrator role, matching project configuration, and an enabled database switch. After applying migration 13, configure these **server-only** variables locally and in the intended Vercel environment, then redeploy:
+
+```dotenv
+ENABLE_TEST_DATA_RESET=true
+TEST_DATA_RESET_PROJECT_REF=your-supabase-project-reference
+```
+
+Enable only the confirmed testing database through its Supabase SQL Editor:
+
+```sql
+update public.test_reset_control set enabled = true where id = 1;
+```
+
+The migration defaults to disabled. The owner's existing testing project has been enabled; no reset was executed during feature verification. Browser database roles cannot call the privileged reset functions directly. Database deletion is transactional; private files are removed through the Storage API in batches. If file cleanup is interrupted, **Resume cleanup** continues the saved job without deleting records added afterward. Finish cleanup before starting another testing cycle.
+
+**Before entering real business data:** set `ENABLE_TEST_DATA_RESET=false`, redeploy, and run `update public.test_reset_control set enabled = false where id = 1;`. Use a separate Supabase project for future testing. Keep normal backups; this screen provides no undo.
+
+Validation: 93 tests, lint, typecheck and production build passed, including reset permissions, disabled gates, retained settings/counters, immutable attachments, complete cleanup and safe retries. Live verification checks the screen without submitting a reset.
 
 ## 8. Troubleshooting
 

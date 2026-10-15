@@ -3,7 +3,7 @@ import {readFileSync,readdirSync} from 'node:fs';
 export const staff={admin:'10000000-0000-4000-8000-000000000001',manager:'10000000-0000-4000-8000-000000000002',sales:'10000000-0000-4000-8000-000000000003',accountant:'10000000-0000-4000-8000-000000000004',inactive:'10000000-0000-4000-8000-000000000005'};
 export async function database(last='99999999999999') {
   const db=new PGlite();
-  await db.exec(`create role anon nologin; create role authenticated nologin;
+  await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
     create schema auth; create table auth.users(id uuid primary key,email text);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
