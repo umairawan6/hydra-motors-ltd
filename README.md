@@ -212,6 +212,12 @@ Activity log includes access and business changes. Before/after snapshots are st
 
 ### Customer sales and PDFs
 
+Sale record lookup now searches through a permission-checked server action and displays customer/vehicle match counts. A single match for an entered search is selected automatically; multiple matches populate the dropdown. No matches produces explicit feedback. Searches retain entered prices/charges and existing selections without a page reload.
+
+Use **Edit / remove draft** from Sales & invoices to edit an unissued sale or cancel it through **Remove draft**. Cancelled drafts are retained under the `void` status filter and excluded from Active sales. For issued documents, use **View / correct invoice** and **Correct / cancel issued invoice**: credit a price correction, or fully credit/refund/return stock and create a replacement sale for incorrect buyer/vehicle details. Issued financial history and stored PDFs cannot be overwritten or permanently deleted through these controls.
+
+Vehicle stock has **Edit / manage stock → Remove from stock** with confirmation. This archives an unsold vehicle and excludes it from the default stock list and new-sale selection. Use the `archived` filter to find it; select available/reserved in its details and save to restore. Sold vehicles require the invoice credit/return workflow first. Costs, photos and history are retained. No existing business records were removed while testing these controls.
+
 1. As administrator, open **Invoice settings**. Save actual company name, address, registration number, contact/payment details and approved terms. Confirm **no VAT**, as selected for this implementation. VAT and margin-scheme calculation are not supported yet.
 2. Create a sale, search/select an active customer and available/reserved vehicle, then enter vehicle price, discount and optional described charges. **Save the draft before issuing**; issuance uses saved values.
 3. Issue the invoice with explicit confirmation. One database transaction allocates a unique number, snapshots company/customer/vehicle/prices, marks the sale issued and stock sold, and records the audit trail.

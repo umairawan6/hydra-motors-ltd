@@ -17,3 +17,13 @@ export async function saveCosts(_state:ActionState,form:FormData):Promise<Action
   const {error}=await db.rpc('save_vehicle_costs',{target_vehicle:id.data,purchase:Number(parsed.data.purchase),preparation:Number(parsed.data.preparation),other:Number(parsed.data.other),expected_version:version}); if(error) return {error:safeDatabaseError(error)};
   revalidatePath(`/dashboard/vehicles/${id.data}`); return {success:'Costs saved. Refresh before making another change.'};
 }
+export async function archiveVehicle(_state:ActionState,form:FormData):Promise<ActionState> {
+  const {db}=await requireStaff('stock.write');const id=z.uuid().safeParse(form.get('id'));const version=versionInput(form);
+  if(!id.success || version<1 || form.get('confirm')!=='on') return {error:'Confirm removal of this vehicle from stock.'};
+  const {data:vehicle,error:readError}=await db.from('vehicles').select('*').eq('id',id.data).maybeSingle();
+  if(readError || !vehicle) return {error:'Unable to load the vehicle.'};
+  if(vehicle.status==='sold') return {error:'Sold vehicles must use the invoice credit and stock-return workflow.'};
+  const {error}=await db.rpc('save_vehicle',{payload:{id:vehicle.id,registration:vehicle.registration,vin:vehicle.vin,make:vehicle.make,model:vehicle.model,model_year:vehicle.model_year,mileage:vehicle.mileage,purchase_date:vehicle.purchase_date,status:'archived'},expected_version:version});
+  if(error) return {error:safeDatabaseError(error)};
+  revalidatePath('/dashboard/vehicles');revalidatePath('/dashboard');revalidatePath(`/dashboard/vehicles/${id.data}`);redirect('/dashboard/vehicles?removed=1');
+}

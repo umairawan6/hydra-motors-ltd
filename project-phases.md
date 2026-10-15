@@ -8,6 +8,8 @@ Phase 3 local evidence: stock.test.ts covers persistent records, stale edits, no
 
 Invoice design refinement (15 October 2026): recovered the previous invoice reference/logo, removed VAT wording from generated PDFs, and added optional printed seller/buyer signatures with names/dates. Customer/credit/finance and long-terms samples are checked separately. Existing stored PDFs are never overwritten by a design change.
 
+Workflow repair (15 October 2026): sale record search now returns visible results without discarding form state; draft edit/removal and issued-invoice corrections are explicit in the sales list/detail screens. Unsold stock has an archive/removal confirmation and restore guidance; archived vehicles and cancelled drafts are excluded from default lists. Regression coverage exercises draft edit/cancellation, stock archive/restore/stale edits and retention of costs. Local checks: 79 tests, lint, typecheck and build passed. Browser verification is recorded after release; no user records are deleted for testing.
+
 | Phase | Steps in order | Exit criteria |
 |---|---|---|
 | 0 — Baseline | Inventory starter; recover original invoice UI if available; confirm finance-invoice interpretation, required invoice fields and tax modes | UI reference recorded; business decisions explicit; missing reference acknowledged |

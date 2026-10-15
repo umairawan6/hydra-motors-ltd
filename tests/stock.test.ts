@@ -7,6 +7,19 @@ const vehicle='30000000-0000-4000-8000-000000000001'; const customer='20000000-0
 beforeAll(async()=>{db=await database('20261014000350'); await db.query("insert into public.customers(id,full_name) values($1,'Customer')",[customer]); await db.query("insert into public.vehicles(id,registration,make,model) values($1,'TEST01','Test','Car')",[vehicle]);});
 afterAll(async()=>await db?.close());
 describe('stock workflows',()=>{
+  it('archives and restores stock without deleting costs and rejects stale removal',async()=>{
+    await asStaff(db,staff.admin,async sql=>{
+      const payload={id:vehicle,registration:'TEST01',make:'Test',model:'Car',status:'archived'};
+      await sql.query('select save_vehicle_costs($1,7000,100,0,0)',[vehicle]);
+      await sql.query('select save_vehicle($1::jsonb,1)',[JSON.stringify(payload)]);
+      expect((await sql.query<{status:string}>('select status from vehicles where id=$1',[vehicle])).rows[0].status).toBe('archived');
+      expect((await sql.query('select id from vehicles where id=$1',[vehicle])).rows).toHaveLength(1);
+      expect(Number((await sql.query<{purchase_cost:string}>('select purchase_cost from vehicle_costs where vehicle_id=$1',[vehicle])).rows[0].purchase_cost)).toBe(7000);
+      await sql.query('select save_vehicle($1::jsonb,2)',[JSON.stringify({...payload,status:'available'})]);
+      expect((await sql.query<{status:string}>('select status from vehicles where id=$1',[vehicle])).rows[0].status).toBe('available');
+      await expect(sql.query('select save_vehicle($1::jsonb,1)',[JSON.stringify(payload)])).rejects.toThrow('Record changed');
+    });
+  });
   it('persists customer changes and detects a stale edit',async()=>{
     await asStaff(db,staff.sales,async sql=>{await sql.query("select public.save_customer($1::jsonb,1)",[JSON.stringify({id:customer,full_name:'Changed',archived:true})]); expect((await sql.query<{version:number;archived:boolean}>('select version,archived from customers where id=$1',[customer])).rows).toEqual([{version:2,archived:true}]); await expect(sql.query("select public.save_customer($1::jsonb,1)",[JSON.stringify({id:customer,full_name:'Stale'})])).rejects.toThrow('Record changed');});
   });

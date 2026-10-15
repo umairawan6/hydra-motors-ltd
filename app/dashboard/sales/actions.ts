@@ -5,6 +5,20 @@ import {z} from 'zod';
 import {requireStaff} from '../../../lib/auth/session';
 import {moneyInput,formStrings,versionInput,safeDatabaseError} from '../../../lib/business/validation';
 import type {ActionState} from '../../../lib/validation';
+import {can} from '../../../lib/auth/permissions';
+import {searchInput} from '../../../lib/business/format';
+export async function findSaleRecords(customerSearch:string,vehicleSearch:string) {
+  const {db,permissions}=await requireStaff('sales.write');
+  if(!can(permissions,'customers.read') || !can(permissions,'stock.read')) return {error:'Customer and vehicle read permissions are required.',customers:[],vehicles:[]};
+  const customer=searchInput(typeof customerSearch==='string' ? customerSearch : '');
+  const vehicle=searchInput(typeof vehicleSearch==='string' ? vehicleSearch : '').replaceAll(' ','');
+  const [customers,vehicles]=await Promise.all([
+    db.from('customers').select('id,full_name').eq('archived',false).ilike('full_name',`%${customer}%`).order('full_name').order('id').limit(50),
+    db.from('vehicles').select('id,registration,make,model').in('status',['available','reserved']).ilike('registration',`%${vehicle}%`).order('registration').order('id').limit(50),
+  ]);
+  if(customers.error || vehicles.error) return {error:'Unable to find customers or available stock.',customers:[],vehicles:[]};
+  return {customers:(customers.data ?? []).map(item=>({value:item.id,label:item.full_name})),vehicles:(vehicles.data ?? []).map(item=>({value:item.id,label:`${item.registration} · ${item.make} ${item.model}`})),error:''};
+}
 const draftSchema=z.object({customer_id:z.uuid(),vehicle_id:z.uuid(),list_price:moneyInput,discount:moneyInput,fees:moneyInput,fee_description:z.string().trim().max(300)});
 const commandSchema=z.object({id:z.uuid(),request_key:z.uuid()});
 function refresh(id:string) {revalidatePath('/dashboard');revalidatePath('/dashboard/sales');revalidatePath(`/dashboard/sales/${id}`);revalidatePath('/dashboard/vehicles');}

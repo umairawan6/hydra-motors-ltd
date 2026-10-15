@@ -7,6 +7,23 @@ beforeAll(async()=>{db=await database(); await db.query("insert into customers(i
 afterAll(async()=>await db?.close());
 async function issued(sql:PGlite) {const draft=await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'})]); const sale=draft.rows[0].id; const key=randomUUID(); const invoice=await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[sale,key]); return {sale,invoice:invoice.rows[0].id,key};}
 describe('transactional sales',()=>{
+  it('edits a draft, removes it with history and releases its vehicle for a new draft',async()=>{
+    await asStaff(db,staff.admin,async sql=>{
+      const payload={customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'};
+      const sale=(await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify(payload)])).rows[0].id;
+      await sql.query('select save_sale_draft($1::jsonb,1)',[JSON.stringify({...payload,id:sale,list_price:'9500'})]);
+      expect(Number((await sql.query<{sale_price:string}>('select sale_price from sales where id=$1',[sale])).rows[0].sale_price)).toBe(9500);
+      await sql.query('select cancel_sale_draft($1,2)',[sale]);
+      expect((await sql.query<{status:string}>('select status from sales where id=$1',[sale])).rows[0].status).toBe('void');
+      expect((await sql.query('select save_sale_draft($1::jsonb,0)',[JSON.stringify(payload)])).rows).toHaveLength(1);
+    });
+  });
+  it('rejects cancelling an issued sale through the draft removal action',async()=>{
+    await asStaff(db,staff.admin,async sql=>{
+      const {sale}=await issued(sql);
+      await expect(sql.query('select cancel_sale_draft($1,2)',[sale])).rejects.toThrow();
+    });
+  });
   it('issues once, snapshots the invoice and marks stock sold',async()=>{await asStaff(db,staff.admin,async sql=>{const {sale,invoice,key}=await issued(sql); expect((await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[sale,key])).rows[0].id).toBe(invoice); expect((await sql.query<{status:string}>('select status from vehicles where id=$1',[vehicle])).rows[0].status).toBe('sold'); expect((await sql.query<{snapshot:{customer:{full_name:string}}}>('select snapshot from invoices where id=$1',[invoice])).rows[0].snapshot.customer.full_name).toBe('Customer'); await expect(sql.query('select issue_sale($1,1,$2)',[sale,randomUUID()])).rejects.toThrow('Draft changed');});});
   it('prevents a second active sale for the same vehicle',async()=>{await asStaff(db,staff.sales,async sql=>{const payload=JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000'}); await sql.query('select save_sale_draft($1::jsonb,0)',[payload]); await expect(sql.query('select save_sale_draft($1::jsonb,0)',[payload])).rejects.toThrow('duplicate');});});
   it('requires approved settings and rolls back failed issuance',async()=>{await db.exec('begin'); try {await db.exec('update billing_settings set approved=false'); await db.query("select set_config('request.jwt.claim.sub',$1,true)",[staff.admin]); await db.exec('set local role authenticated'); const draft=await db.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000'})]); await expect(db.query('select issue_sale($1,1,$2)',[draft.rows[0].id,randomUUID()])).rejects.toThrow('not approved');} finally {await db.exec('rollback');}});
