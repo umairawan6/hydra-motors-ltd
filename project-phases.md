@@ -10,6 +10,8 @@ Invoice design refinement (15 October 2026): recovered the previous invoice refe
 
 Workflow repair (15 October 2026): sale record search now returns visible results without discarding form state; draft edit/removal and issued-invoice corrections are explicit in the sales list/detail screens. Unsold stock has an archive/removal confirmation and restore guidance; archived vehicles and cancelled drafts are excluded from default lists. Regression coverage exercises draft edit/cancellation, stock archive/restore/stale edits and retention of costs. Local checks: 79 tests, lint, typecheck and build passed. Browser verification is recorded after release; no user records are deleted for testing.
 
+Live verification of e273eb5: Vercel Production reported Ready. Authenticated record search returned zero matches for an absent customer and one match for an existing customer; automatic selection and retention of an unsaved price were confirmed. Both existing vehicles were sold, so zero eligible vehicle matches was correct. Sales list correction links, issued-invoice credit controls and sold-stock removal guidance loaded. No draft was saved, no credit/payment was issued and no stock record was changed in live verification; mutation behavior was checked in rollback-isolated PostgreSQL tests.
+
 | Phase | Steps in order | Exit criteria |
 |---|---|---|
 | 0 — Baseline | Inventory starter; recover original invoice UI if available; confirm finance-invoice interpretation, required invoice fields and tax modes | UI reference recorded; business decisions explicit; missing reference acknowledged |
