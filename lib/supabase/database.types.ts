@@ -19,7 +19,7 @@ export type Database = {
       permissions: Table<{ key: string; description: string }>;
       role_permissions: Table<{ role_key: string; permission_key: string }>;
       customers: Table<{ id: string; full_name: string; email: string | null; phone: string | null; address: string | null; created_at: string; archived:boolean; version:number; updated_at:string }>;
-      vehicles: Table<{ id: string; registration: string; vin: string | null; make: string; model: string; model_year: number | null; mileage: number | null; created_at: string; status:string; purchase_date:string|null; version:number; updated_at:string }>;
+      vehicles: Table<{ id: string; registration: string | null; vin: string | null; make: string | null; model: string | null; model_year: number | null; mileage: number | null; created_at: string; status:string; purchase_date:string|null; version:number; updated_at:string }>;
       vehicle_costs: Table<{ vehicle_id: string; purchase_cost: number; preparation_cost: number; other_cost: number; updated_at: string; version:number }>;
       vehicle_photos: Table<{id:string;vehicle_id:string;path:string;ready:boolean;created_at:string}>;
       billing_settings:Table<{id:number;company_name:string;address:string;registration_number:string;email:string;phone:string;payment_details:string;terms:string;tax_mode:string;approved:boolean;updated_at:string}>;

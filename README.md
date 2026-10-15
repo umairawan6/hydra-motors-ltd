@@ -153,6 +153,7 @@ Run each complete file once, in this order:
 13. `supabase/migrations/20261015152512_admin_test_data_reset.sql`
 14. `supabase/migrations/20261015160739_sales_profit_reports.sql`
 15. `supabase/migrations/20261015223253_test_reset_api_delete_guard.sql`
+16. `supabase/migrations/20261015224811_draft_vehicle_stock.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
@@ -421,3 +422,11 @@ Official references: [Supabase SSR](https://supabase.com/docs/guides/auth/server
 Phase 6 release verified on the live production domain (commit 3e1aa5e): reports loaded, the October date filter applied, and the monthly CSV downloaded with matching totals and the missing-cost warning. No business records were modified. Migration 14 is already applied to the existing Hydra testing project; do not rerun it.
 Phase 7 local evidence: 110 tests, lint, typecheck and production build passed. The new full-workflow fixture rolls back its database changes; it does not issue a cloud invoice or make a real payment. Hosted acceptance remains tracked separately in docs/release-readiness.md.
 Hosted Phase 7 checks passed at commit cb67cf8: https://github.com/umairawan6/hydra-motors-ltd/actions/runs/38771941579. The Linux runner completed npm ci, all 110 tests, lint/typecheck and production build without Supabase/Vercel credentials. The initial lockfile failure was repaired by adding only the two missing transitive entries; direct dependency versions are unchanged.
+
+## Draft vehicle stock
+
+New vehicles default to **Draft**. Drafts can have missing registration, make, model, year or mileage; missing data stays empty rather than being invented. VIN is optional for every status. There is one **Year** field for the car/model year, separate from the existing purchase-date field. The stock list shows year and has a Draft filter.
+
+Open Vehicle stock, filter Draft, edit the vehicle and complete **registration, make, model, year and mileage**, then choose **Available** and save. Zero mileage is valid. Required fields react to the selected status and are validated again on the server/database RPC. Known registrations/VINs retain normalized uniqueness. Drafts cannot be selected for sales or issued through sale RPCs. Incomplete drafts may be archived and restored to Draft; Available/Reserved require complete details. Stock-write permission and stale-edit protection remain.
+
+Migration 16 adds nullable draft import fields and activation validation while preserving existing stock/history. Future Auto Trader imports must explicitly use Draft and flag missing values for staff review. **The Auto Trader connector is not implemented yet.** Local validation: 124 tests, lint and typecheck passed.

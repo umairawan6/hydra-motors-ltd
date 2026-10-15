@@ -22,7 +22,7 @@ async function asAdmin(work:()=>Promise<void>) {await db.query("select set_confi
 describe('admin-only test reset',()=>{
   it('still permits normal photo finalization without granting reset-table access',async()=>{
     await asStaff(db,staff.manager,async sql=>{
-      const vehicle=(await sql.query<{id:string}>('select save_vehicle($1::jsonb,0) id',[JSON.stringify({registration:'UPLOAD01',make:'Test',model:'Car'})])).rows[0].id;
+      const vehicle=(await sql.query<{id:string}>('select save_vehicle($1::jsonb,0) id',[JSON.stringify({registration:'UPLOAD01',make:'Test',model:'Car',model_year:'2024',mileage:'10000'})])).rows[0].id;
       const photo=randomUUID();await sql.query('insert into vehicle_photos(id,vehicle_id,path) values($1,$2,$3)',[photo,vehicle,vehicle+'/'+photo+'.png']);
       await sql.query('update vehicle_photos set ready=true where id=$1',[photo]);
       expect((await sql.query<{ready:boolean}>('select ready from vehicle_photos where id=$1',[photo])).rows[0].ready).toBe(true);
