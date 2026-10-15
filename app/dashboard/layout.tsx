@@ -10,6 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (can(permissions, 'stock.read')) links.push({href:'/dashboard/vehicles',label:'Vehicle stock'});
   if (can(permissions,'sales.read_all') || can(permissions,'sales.write')) links.push({href:'/dashboard/sales',label:'Sales & invoices'});
   if (profile.role==='admin') links.push({href:'/dashboard/settings',label:'Invoice settings'});
+  if (can(permissions,'reports.sales')) links.push({href:'/dashboard/reports',label:'Sales & profits'});
   if (can(permissions,'finance.manage')) {links.push({href:'/dashboard/finance',label:'Finance invoices'});links.push({href:'/dashboard/expenses',label:'Supplier invoices'});}
   if (can(permissions, 'users.manage')) links.push({ href: '/dashboard/users', label: 'Staff accounts' });
   if (can(permissions, 'roles.manage')) links.push({ href: '/dashboard/roles', label: 'Roles & permissions' });

@@ -41,6 +41,41 @@ For normal use, open `/login` and use your administrator email and password. In 
 
 Local startup with the configured environment: `npm ci`, `npm run dev`, then open `http://127.0.0.1:3000`. If the production preview is already using port 3000, stop it before starting development. Both local and hosted apps currently use the same Supabase project.
 
+## Project roadmap
+
+| Phase | Scope | Status |
+|---|---|---|
+| 0–2 | Baseline, Next.js/Supabase foundation, login and roles | Implemented |
+| 3 | Customers and vehicle stock | Implemented |
+| 4 | Customer invoices, payments, credits and PDF | Implemented |
+| 5 | Finance-company invoices and supplier/expense invoices | Implemented |
+| 6 | Sales/profit reports, date filters, monthly charts and CSV | Implemented; validation below |
+| 7 | Workflow acceptance and launch readiness: independent browser concurrency, SMTP, responsive/accessibility checks and business settings | Pending |
+| 8 — Cloud access and application security | Review all roles/RLS/RPC/Storage boundaries; strengthen administrator authentication and account recovery; review sessions, security headers, input/upload limits, abuse protection and secret/environment separation; disable test reset before real data | Planned |
+| 9 — Cloud monitoring and recovery | Configure safe error/security logging and actionable alerts; review dependency updates and credential rotation; verify backup/restore on a separate environment; document incident response, deployment rollback, retention and periodic access reviews | Planned |
+
+Phases 8 and 9 are the final two phases. They strengthen existing protections; security checks continue in every feature phase. Paid services, account-wide security changes and recovery credentials require an agreed configuration before activation.
+
+### Phase 6: using Sales & profits
+
+Open **Sales & profits** in the sidebar. Select inclusive From/To dates (London time, up to ten years), apply the filter and download the monthly CSV if needed. Empty months show zero. Reports are aggregated in PostgreSQL, so the REST row limit cannot silently truncate the totals.
+
+`reports.sales` grants dealership-wide aggregate sales/cash/debt figures without customer details. Profit figures and cost columns require **both** `reports.profit` and `costs.read`; these fields are omitted from database responses and CSV for other users. Default Manager can see sales reports; Administrator and Accountant can also see profit. Sales staff have no reporting access by default. Inactive accounts and anonymous/direct unpermitted RPC calls are denied.
+
+- Gross sales use the customer sale issue date; credits reduce revenue on their own issue date. Drafts and finance-company invoice totals never add revenue.
+- Cash is receipts minus refunds on payment dates, with finance settlements counted once. Outstanding and due-back balances are **current, across all dates**, separate from the selected period.
+- Vehicle costs are current purchase/preparation/other costs plus open supplier bills marked additional. Included-in-base bills are not counted again. Full credits reverse the sale's vehicle cost once on the final credit date; partial credits reduce revenue only.
+- Trading profit subtracts those vehicle costs and open overhead invoices dated in the selected period. It is an operational estimate before tax and unrecorded expenses. Later cost changes or bill voids restate past reports; these are not frozen accounting statements.
+- Missing cost records withhold affected profit figures. Legacy issued sales without an issue date are explicitly flagged and excluded from dated revenue/profit, while their debt remains included in current balances. Reconcile these records before relying on reports.
+
+Validation: lint, typecheck and production build passed; 108 tests passed together, followed by the additional return/resale test (16 reporting tests, 109 total). Fixtures cover partial/full credits, later-period credits, London summer-time boundaries, missing costs, finance settlement deduplication, supplier cost treatments, empty dates, CSV and permission boundaries. Live verification is read-only; it does not issue invoices or reset test data.
+
+### Optional Auto Trader stock connection
+
+**Feasible, subject to Hydra's approved API access.** Auto Trader Connect's [Stock Sync](https://help.autotrader.co.uk/hc/en-gb/articles/21846314775453-Introduction-to-Stock-Sync) supports a paginated stock baseline for a dealer advertiser ID and subsequent webhook updates, including media, prices and reserved/sold/deleted status. Production access has Auto Trader integration/go-live requirements. An existing advert alone does not establish API access; confirm the account's Stock Sync entitlement and permitted fields with Auto Trader before implementation. Availability and any fees have not been confirmed for Hydra.
+
+Planned flow: server-only credentials → reviewed import preview → match external stock ID and normalized registration/VIN → import available vehicle/specification/advert/media data → retry-safe updates and sync audit. Missing required values must be flagged for review; never invent vehicle details. Purchase costs, preparation expenses and internal supplier records remain manual unless an authorized source supplies them. External sold/deleted updates must not overwrite issued sale history or silently delete internal stock. Start with one-way import; retain manual stock entry. **No Auto Trader integration or scraping is implemented in this phase.**
+
 ## 1. Run locally
 
 Requirements: Node.js **22.13+ or 24 LTS** (Node 24 used for local checks), npm and a Supabase project. Git is needed to publish the repository. Supabase CLI/Docker are optional for local database development.
@@ -99,6 +134,7 @@ Run each complete file once, in this order:
 11. `supabase/migrations/20261014000595_query_indexes.sql`
 12. `supabase/migrations/20261015000100_auth_helper_privileges.sql`
 13. `supabase/migrations/20261015152512_admin_test_data_reset.sql`
+14. `supabase/migrations/20261015160739_sales_profit_reports.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 

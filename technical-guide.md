@@ -46,6 +46,11 @@ Database RPCs must validate auth.uid(), active state and permission internally. 
 - Aggregate reports in SQL with authorization, date boundaries and consistent tax treatment. Revenue is based on issue/sale date; cash receipts are a separate measure. Finance invoice issuance contributes no additional revenue.
 
 ## Structure
+
+### Reporting implementation
+
+`sales_profit_report(date,date)` is a read-only, stable SQL-backed RPC. Its definer privilege is deliberate: `reports.sales` authorizes dealership-wide aggregate results even when base sales RLS is narrower. It checks the current active profile/permission internally, revokes PUBLIC/anonymous execution, uses an empty search_path and returns no customer/staff identities. Profit/cost JSON keys require both `reports.profit` and `costs.read`. The page and private/no-store CSV route also require `reports.sales`; they share date/response validation in `lib/reports.ts` and use the signed-in Supabase client, never the admin key. One SQL statement calculates monthly totals from business events without client pagination limits. See README Phase 6 for recognition dates, cost restatement, missing/legacy data and current-balance semantics.
+
 ```text
 app/(auth)/login/
 app/(dashboard)/{vehicles,customers,sales,finance,reports,settings}/

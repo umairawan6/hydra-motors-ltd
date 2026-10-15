@@ -33,6 +33,7 @@ export type Database = {
       supplier_invoice_summary:{Row:SupplierInvoiceRow & {balance:number};Relationships:[]};
     };
     Functions: {
+      sales_profit_report:{Args:{start_date:string;end_date:string};Returns:Json};
       begin_test_data_reset:{Args:{actor:string;request:string;confirmation:string};Returns:Json};
       complete_test_data_reset:{Args:{actor:string;target:string};Returns:undefined};
       can_access_supplier:{Args:{target:string};Returns:boolean};
