@@ -4,7 +4,7 @@ Next.js App Router + React + TypeScript + Supabase PostgreSQL/Auth. The navy/cya
 
 ## What is implemented
 
-Phases **0–5** are implemented locally: foundation, access, customers/stock, customer invoicing and financial invoices.
+Phases **0–6** are implemented: foundation, access, customers/stock, customer invoicing, financial invoices and sales/profit reporting. Phase 7 is in progress.
 
 - Responsive staff portal, login, password reset/setup, logout and session refresh.
 - Database-backed overview; no fabricated sales/customer/stock numbers.
@@ -17,7 +17,7 @@ Phases **0–5** are implemented locally: foundation, access, customers/stock, c
 - Finance-provider contacts, collection invoices linked to existing sales, settlement allocations, remittance references, due/paid filters and void history.
 - Supplier bills, payments/refunds, private attachments and explicit vehicle cost allocation without adding settled expenses again.
 
-**Next:** phase 6 sales/profit reporting and phase 7 release readiness. Charts, profit dashboards and CSV exports are not implemented yet. Live Supabase acceptance remains pending; this is not a finished production dealership system.
+Sales/profit charts and permission-aware CSV exports are live. **Current work:** phase 7 workflow acceptance and release readiness. Full hosted workflow acceptance remains pending; see the [release checklist](docs/release-readiness.md) for evidence and outstanding checks.
 
 The original invoice editor was absent from the starter. On 15 October 2026 the owner supplied a previous invoice PDF; its layout and embedded logo now provide the customer invoice design reference. See docs/baseline.md.
 
@@ -50,11 +50,19 @@ Local startup with the configured environment: `npm ci`, `npm run dev`, then ope
 | 4 | Customer invoices, payments, credits and PDF | Implemented |
 | 5 | Finance-company invoices and supplier/expense invoices | Implemented |
 | 6 | Sales/profit reports, date filters, monthly charts and CSV | Implemented; validation below |
-| 7 | Workflow acceptance and launch readiness: independent browser concurrency, SMTP, responsive/accessibility checks and business settings | Pending |
+| 7 | Workflow acceptance and launch readiness: independent browser concurrency, SMTP, responsive/accessibility checks and business settings | In progress; local full-workflow test and CI definition added |
 | 8 — Cloud access and application security | Review all roles/RLS/RPC/Storage boundaries; strengthen administrator authentication and account recovery; review sessions, security headers, input/upload limits, abuse protection and secret/environment separation; disable test reset before real data | Planned |
 | 9 — Cloud monitoring and recovery | Configure safe error/security logging and actionable alerts; review dependency updates and credential rotation; verify backup/restore on a separate environment; document incident response, deployment rollback, retention and periodic access reviews | Planned |
 
 Phases 8 and 9 are the final two phases. They strengthen existing protections; security checks continue in every feature phase. Paid services, account-wide security changes and recovery credentials require an agreed configuration before activation.
+
+### Phase 7: acceptance and release checks
+
+The [release checklist](docs/release-readiness.md) tracks verified checks separately from pending hosted acceptance. Run `npm run check` and `npm run build` locally. The isolated workflow test creates fictitious customers/stock, issues an invoice, records/retries a receipt, renders the actual saved invoice snapshot as a PDF, verifies immutability after a customer edit, and reconciles the report/CSV. It rolls back all fixture records and uses no cloud credentials. Sample PDF: ignored `tmp/pdfs/workflow-acceptance.pdf`.
+
+GitHub Actions workflow **Repository checks** runs `npm ci`, checks/tests and the production build on pushes to `main`/`features/new-version` and on pull requests. It needs no Supabase/Vercel secrets and does not deploy or run live migrations. A passing local run does not establish that GitHub Actions passed. Required-check/branch-protection settings are separate; Vercel's existing automatic Git deployment is not gated by this workflow.
+
+SMTP remains deferred under the owner's earlier preference. Independent browser/session races, hosted private-file delivery, full keyboard/mobile acceptance and real dealership settings still need evidence. Recovery acceptance is coordinated with phase 9. Phase 7 remains open until its required checks pass. Additional requested points will be fitted into upcoming phases once supplied; phases 8 and 9 remain the final cloud-security phases.
 
 ### Phase 6: using Sales & profits
 
@@ -397,3 +405,4 @@ Gstack: its review instruction skill was installed locally at `~/.codex/skills/g
 
 Official references: [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), [database migrations](https://supabase.com/docs/guides/deployment/database-migrations), [Next.js authorization](https://nextjs.org/docs/app/guides/authentication), [Vercel Next.js deployment](https://vercel.com/docs/frameworks/full-stack/nextjs).
 Phase 6 release verified on the live production domain (commit 3e1aa5e): reports loaded, the October date filter applied, and the monthly CSV downloaded with matching totals and the missing-cost warning. No business records were modified. Migration 14 is already applied to the existing Hydra testing project; do not rerun it.
+Phase 7 local evidence: 110 tests, lint, typecheck and production build passed. The new full-workflow fixture rolls back its database changes; it does not issue a cloud invoice or make a real payment. Hosted acceptance remains tracked separately in docs/release-readiness.md.
