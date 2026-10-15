@@ -21,6 +21,8 @@ Status: in progress. A passing build is not launch approval. Record date, commit
 | Reporting and CSV | Date filter and downloaded numbers match known fixtures; cost/profit absent for unauthorized roles | Production admin page/filter/CSV verified at 3e1aa5e; independent manager/accountant browser check pending |
 | Mobile and keyboard | Login/forms/navigation usable at small width; labels, focus and errors usable; tables scroll within container | Prior login/report width checks; complete form/keyboard audit pending |
 | SMTP invite/reset | Owned sender verified; staff invitation and password reset deliver, token expires/works once, chosen password remains private | Deferred by owner; no provider configured; not accepted |
+| 7A customer invoice copy | Once issued PDF is ready, one customer email is queued; retries do not duplicate it; status/resend works; invalid/missing email or provider failure is visible | Newly requested; planned; application transactional-email integration not implemented |
+| 7B thank-you SMS | Optional completed-sale message; customer preferences, phone validation, sender and duplicate/cost controls work | Later optional addition; no provider configured or messages sent |
 | Business identity and terms | Owner confirms real company identity, bank details, no-tax configuration and terms; final invoice PDF reviewed | Test setup only; final business confirmation pending |
 | Test tooling disabled | Before real records, both reset gates disabled; dedicated staging environment documented | Still testing; reset intentionally available to admin |
 | Recovery and monitoring | Restore into isolated target and application rollback verified; alert ownership documented | Detailed operational completion in phase 9; not yet verified |
@@ -39,4 +41,5 @@ Choose a provider and an owned sending domain/mailbox, verify DNS/sender ownersh
 
 ## Release decision
 
-Keep phase 7 open until the required hosted checks have evidence and business settings are confirmed. Record outstanding phase 8/9 controls before using real records. Auto Trader connection remains an optional integration requiring approved account/API access, not a launch dependency. New owner feature requests will be assigned to the appropriate upcoming phase once supplied.
+Keep phase 7 open until the required hosted checks have evidence and business settings are confirmed. Record outstanding phase 8/9 controls before using real records. Auto Trader connection remains an optional integration requiring approved account/API access, not a launch dependency. Owner additions are assigned to 7A invoice email and later optional 7B SMS; final phases 8/9 remain cloud security and recovery. The first hosted GitHub Actions run exposed two missing lockfile entries (@emnapi/core and @emnapi/runtime). Those entries were repaired without changing direct dependency versions; npm 11.21.1 clean-install dry-run passed. The hosted rerun still needs verification.
+

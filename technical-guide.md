@@ -60,7 +60,14 @@ supabase/{migrations,tests,seed.sql}
 tests/{unit,e2e}/
 ```
 
+## Planned invoice email and SMS delivery
+
+After invoice commit, schedule one persisted invoice-email job keyed by invoice ID/channel and wait for its private PDF to be ready. Authorize against the current active staff/role for manual resend, record the intended recipient and immutable attachment identity, and distinguish an explicit resend from an automatic retry. Provider calls run server-side with idempotency, bounded retries and durable delivery state; a network failure must not reissue a sale or duplicate the invoice. Verify provider webhook signatures before accepting delivery/bounce updates. Missing recipient/provider configuration must remain visible rather than silently dropping a job. Supabase Auth custom SMTP alone does not implement this application mail flow. No delivery tables/worker/provider integration are implemented yet.
+
+Add SMS later as a separate optional channel, gated by configuration and customer communication preferences, with normalized phone numbers, the agreed completed-sale trigger, duplicate prevention and cost limits. Protect provider credentials and recipient details; do not log message bodies, attachment contents or secrets. Define private-data retention and delivery alerts in phases 8–9.
+
 ## Local setup and release
+
 1. Inspect dependency compatibility; install and commit lockfile. Add typecheck/lint/test scripts.
 2. Configure .env.local with public Supabase URL/key; privileged key only when an admin workflow needs it. Keep .env.example value-free and secrets ignored.
 3. Baseline existing schema into migrations; test fresh install and upgrade on disposable databases. Generate database types.

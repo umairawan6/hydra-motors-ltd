@@ -1,6 +1,6 @@
 # Hydra Motors — Product requirements
 
-Status: phases 0–5 implemented locally; live Supabase acceptance pending. See project-phases.md.
+Status: phases 0–6 implemented; phase 7 acceptance is in progress. Customer invoice email copies and later optional thank-you SMS are planned in phase 7. Full hosted acceptance remains pending. See project-phases.md.
 Purpose: turn the existing starter into a persistent dealership management app while preserving the approved UI and workflows.
 
 ## Scope and assumptions
@@ -20,7 +20,14 @@ Purpose: turn the existing starter into a persistent dealership management app w
 | Financial invoices | Finance provider, customer/sale reference, amount due, settlement and balance; supplier expense invoices and attachments | Finance settlement reduces sale balance once; finance invoice never duplicates sale revenue; expense counted in costs once |
 | Login and roles | Invite-only login, reset password, logout, active/inactive users, roles and configurable role permissions | Unauthorized direct URLs, server actions, database queries and file requests are denied; deactivation blocks existing sessions |
 
+## Planned customer communications
+
+- Phase 7A: when a customer invoice is successfully issued and its PDF is ready, automatically send a copy to the invoice customer's validated email. Use the immutable issued document, not a rebuilt editable draft. Show delivery state and permission-checked resend; an email failure must not invalidate the sale. Issue/payment/PDF retries must not cause duplicate messages. Missing email is surfaced for staff action.
+- Phase 7B, later: optional thank-you/enjoy-your-car SMS after the agreed completed-sale trigger, using customer communication preferences and a validated phone. Keep this separate from debt collection and marketing. Sender, provider, template, cost cap and test recipient must be configured before activation.
+- Both are currently planned. No email/SMS provider has been connected and no customer messages have been sent. Staff-auth SMTP and customer invoice emails are separate integrations.
+
 ## Default access
+
 All permissions require an active account. Sales users see their own sales and related invoices; managers/accountants/admins see all sales.
 
 | Capability | Admin | Manager | Sales | Accountant |

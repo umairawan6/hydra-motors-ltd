@@ -62,7 +62,16 @@ The [release checklist](docs/release-readiness.md) tracks verified checks separa
 
 GitHub Actions workflow **Repository checks** runs `npm ci`, checks/tests and the production build on pushes to `main`/`features/new-version` and on pull requests. It needs no Supabase/Vercel secrets and does not deploy or run live migrations. A passing local run does not establish that GitHub Actions passed. Required-check/branch-protection settings are separate; Vercel's existing automatic Git deployment is not gated by this workflow.
 
-SMTP remains deferred under the owner's earlier preference. Independent browser/session races, hosted private-file delivery, full keyboard/mobile acceptance and real dealership settings still need evidence. Recovery acceptance is coordinated with phase 9. Phase 7 remains open until its required checks pass. Additional requested points will be fitted into upcoming phases once supplied; phases 8 and 9 remain the final cloud-security phases.
+SMTP remains deferred under the owner's earlier preference. Independent browser/session races, hosted private-file delivery, full keyboard/mobile acceptance and real dealership settings still need evidence. Recovery acceptance is coordinated with phase 9. Phase 7 remains open until its required checks pass. Additional communication features are assigned below; phases 8 and 9 remain the final cloud-security phases.
+
+Customer communications requested by the owner are now scheduled within phase 7:
+
+| Step | Planned behavior | Activation requirement |
+|---|---|---|
+| 7A — Invoice email copy | Automatically email the customer the issued invoice PDF once ready. Show queued/sent/failed status, last attempt and authorized retry/resend. Missing customer email is clearly flagged; email failure does not undo issuance or create another invoice. Prevent accidental duplicate sends on issue/PDF retries. | Verified sending address/domain, selected transactional-email provider and delivery tests to an explicitly approved test recipient. Planned, not implemented or sending. |
+| 7B — Thank-you SMS (later) | Optional message such as “Thank you for choosing Hydra Motors. Enjoy your new car!” after a completed sale. Honor the customer's communication preference, validate the phone number and prevent duplicates. Keep SMS separate from invoice email and payment status. | Selected SMS provider, sender setup, agreed sending trigger/template, cost limits and approved test recipient. Planned for later, disabled by default. |
+
+Supabase custom SMTP handles account invitation/password-reset email; it does **not** automatically email sales invoices. Invoice copies need a separate server-side transactional-email integration (potentially using the same email provider). Do not place email/SMS provider secrets in browser code. Phase 8 will review sending permissions, private attachments and webhook authentication; phase 9 will cover delivery alerts, retries and retention. The final two phases remain 8 and 9.
 
 ### Phase 6: using Sales & profits
 
@@ -406,3 +415,4 @@ Gstack: its review instruction skill was installed locally at `~/.codex/skills/g
 Official references: [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), [database migrations](https://supabase.com/docs/guides/deployment/database-migrations), [Next.js authorization](https://nextjs.org/docs/app/guides/authentication), [Vercel Next.js deployment](https://vercel.com/docs/frameworks/full-stack/nextjs).
 Phase 6 release verified on the live production domain (commit 3e1aa5e): reports loaded, the October date filter applied, and the monthly CSV downloaded with matching totals and the missing-cost warning. No business records were modified. Migration 14 is already applied to the existing Hydra testing project; do not rerun it.
 Phase 7 local evidence: 110 tests, lint, typecheck and production build passed. The new full-workflow fixture rolls back its database changes; it does not issue a cloud invoice or make a real payment. Hosted acceptance remains tracked separately in docs/release-readiness.md.
+
