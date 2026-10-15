@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 const config: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: { '/dashboard/invoices/*/pdf': ['./public/branding/hydra-logo.png'] },
   experimental: { serverActions: { bodySizeLimit: '6mb' } },
   async headers() { return [{ source: '/:path*', headers: [
     { key: 'X-Content-Type-Options', value: 'nosniff' },

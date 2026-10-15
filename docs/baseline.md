@@ -2,6 +2,8 @@
 
 Recorded 14 October 2026.
 
+Reference recovered 15 October 2026: the owner supplied the previous two-page invoice PDF. Its Hydra logo was extracted to `public/branding/hydra-logo.png`; the PDF renderer now follows its white/navy/cyan layout. Normal customer samples keep the signature lines on the invoice page, with printed names/dates. The former browser print headers/file paths are absent. Buyer/company example records from that reference were not imported into the database. The original single-file editor remains absent from this repository.
+
 - Existing app: Next.js/React/TypeScript, Supabase cookie login, one protected dashboard, one SQL schema. No integrated invoice editor or stock CRUD.
 - UI evidence: original app layout/login/dashboard; dark navy surfaces, cyan branding, Arial, rounded forms/cards. These remain the visual baseline.
 - The parent starter folder contains no original single-file invoice editor. Visual parity with that absent file cannot be verified; preserve available references and recover the old editor before invoice work if available.

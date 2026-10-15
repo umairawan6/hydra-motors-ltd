@@ -19,7 +19,7 @@ Phases **0–5** are implemented locally: foundation, access, customers/stock, c
 
 **Next:** phase 6 sales/profit reporting and phase 7 release readiness. Charts, profit dashboards and CSV exports are not implemented yet. Live Supabase acceptance remains pending; this is not a finished production dealership system.
 
-The original invoice editor referenced by the starter was not present; see docs/baseline.md.
+The original invoice editor was absent from the starter. On 15 October 2026 the owner supplied a previous invoice PDF; its layout and embedded logo now provide the customer invoice design reference. See docs/baseline.md.
 
 ### Cloud setup progress — 15 October 2026
 
@@ -216,6 +216,8 @@ Activity log includes access and business changes. Before/after snapshots are st
 2. Create a sale, search/select an active customer and available/reserved vehicle, then enter vehicle price, discount and optional described charges. **Save the draft before issuing**; issuance uses saved values.
 3. Issue the invoice with explicit confirmation. One database transaction allocates a unique number, snapshots company/customer/vehicle/prices, marks the sale issued and stock sold, and records the audit trail.
 4. Open the PDF link. The trusted server renders the immutable snapshot and stores it privately. Generation failures can be retried without changing invoice number or issuing another sale. PDFs show issue-time values; current balances are on the sale screen.
+
+The PDF uses the supplied Hydra logo, white A4 pages, navy text and a cyan divider. VAT labels/amounts are hidden. Customer invoices include optional printable seller/buyer signature lines with printed names and dates; these are blank signing spaces, not electronic signatures or proof of handover. Credit notes and finance invoices retain their distinct titles and references. A standard sample fits one page, with long terms continuing naturally. Company details/terms always come from the immutable invoice snapshot; no customer data was copied from the reference PDF. Existing stored PDFs are retained unchanged; the revised design applies when generating a PDF for the first time. The logo is bundled locally with the PDF route, without a remote image request. Example preview: `output/pdf/hydra-invoice-preview.pdf` (fictitious test data, ignored by Git).
 5. Record receipts/deposits after issuance with an Admin/Accountant or other payment-authorized role. Only cleared receipts are recorded in this MVP; there is no bank/card integration. Refunds must link to an original receipt and cannot exceed its unrefunded amount.
 6. Cancel unissued drafts to void them. Correct issued sales using linked credit notes; a full credit reverses the sale financially while preserving the original issued document. Net sale revenue for phase 6 must use `sale_price - credited_amount`, without subtracting those same notes again.
 7. A full credit can return stock if receipts were already refunded. If you credit first and refund later, use **Return fully credited vehicle** afterward. Outstanding finance invoices must be reconciled/voided, and a newer sale prevents an old return action from changing the vehicle.

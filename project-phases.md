@@ -6,6 +6,8 @@ Local validation: 76 tests, lint, TypeScript and production build passed. Fresh 
 
 Phase 3 local evidence: stock.test.ts covers persistent records, stale edits, normalized uniqueness, restricted costs and private-photo RLS. Phase 4: sales.test.ts and pdf.test.ts cover issuance, snapshots, retries, payment/credit/refund balances and PDF rendering. Phase 5: finance.test.ts and finance-integrity.test.ts cover settlement allocation, debt reservations, supplier cost counting, replacement history, returns and migration preservation. See README.md for required live checks.
 
+Invoice design refinement (15 October 2026): recovered the previous invoice reference/logo, removed VAT wording from generated PDFs, and added optional printed seller/buyer signatures with names/dates. Customer/credit/finance and long-terms samples are checked separately. Existing stored PDFs are never overwritten by a design change.
+
 | Phase | Steps in order | Exit criteria |
 |---|---|---|
 | 0 — Baseline | Inventory starter; recover original invoice UI if available; confirm finance-invoice interpretation, required invoice fields and tax modes | UI reference recorded; business decisions explicit; missing reference acknowledged |
