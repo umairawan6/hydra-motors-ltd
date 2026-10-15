@@ -152,6 +152,7 @@ Run each complete file once, in this order:
 12. `supabase/migrations/20261015000100_auth_helper_privileges.sql`
 13. `supabase/migrations/20261015152512_admin_test_data_reset.sql`
 14. `supabase/migrations/20261015160739_sales_profit_reports.sql`
+15. `supabase/migrations/20261015223253_test_reset_api_delete_guard.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
@@ -349,6 +350,10 @@ Before launch, manually verify login/logout, session refresh, reset/invite links
 Other Node hosting can run `npm ci`, `npm run build`, then `npm run start` behind HTTPS with the same env values and Auth URLs. Static export hosting is unsuitable for this authenticated server app.
 
 ## Admin-only test data reset
+
+Completed reset, 15 October 2026: at the owner's request, cleared the disposable customers, cars, sales, invoices/credits, payments and uploaded business files before the planned 14-vehicle Auto Trader import. Database verification found zero customers/vehicles/sales/invoices/payments, zero files in all three managed buckets, and no pending cleanup. The active administrator and company settings were preserved. No Auto Trader vehicles have been imported yet.
+
+Migration 15 fixes a live PostgREST compatibility issue (`DELETE requires a WHERE clause`) by binding each bulk delete to the active authorized reset job. Keep Supabase safe-update protection enabled. Administrator/project/test-mode gates, role grants and durable file cleanup remain unchanged. Reset regression tests passed (14 tests), and the repaired portal reset completed successfully. The existing Hydra project already has this migration; do not rerun it manually.
 
 While this workspace contains only disposable test data, administrators can open **Invoice settings → Manage test data** (`/dashboard/settings/test-data`). Check the displayed counts, stop other users from editing, type `RESET TEST DATA` and tick the permanent-removal confirmation before submitting. Adding this feature does not run a reset.
 

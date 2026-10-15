@@ -39,6 +39,8 @@ Testing maintenance (15 October 2026): added an administrator-only test reset wi
 - Include sales owned by two different users, inactive user, missing permission, competing issue requests, failed PDF generation and duplicate payment retry.
 
 ## Execution handoff
+
+15 October 2026 — owner-authorized test reset completed before the proposed 14-vehicle Auto Trader import. Fixed PostgREST safe-update rejection through migration 20261015223253, with bulk deletes constrained to the active authorized reset job and existing gates/grants retained. Portal reported success; direct verification found zero customer/vehicle/sale/invoice/payment records, zero managed Storage files and no pending cleanup. One active administrator and company settings remained. All 14 reset regression tests passed. Auto Trader import is not started.
 For each phase: inspect relevant files → implement schema/security → implement UI → run phase checks → record evidence and status here. Keep updates short; unresolved required decisions block only the dependent work. Do not mark a phase complete on screenshots or a successful build alone.
 
 
