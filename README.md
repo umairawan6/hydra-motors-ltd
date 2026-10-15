@@ -154,6 +154,7 @@ Run each complete file once, in this order:
 14. `supabase/migrations/20261015160739_sales_profit_reports.sql`
 15. `supabase/migrations/20261015223253_test_reset_api_delete_guard.sql`
 16. `supabase/migrations/20261015224811_draft_vehicle_stock.sql`
+17. `supabase/migrations/20261015230040_autotrader_draft_import.sql`
 
 Use a current Supabase PostgreSQL 15+ project. Storage migrations require Supabase's `storage` schema and create private buckets/policies. Before applying stock migration 00300 to existing data, resolve registrations that collide after uppercasing/removing spaces and VINs that collide after uppercasing. The migration deliberately refuses ambiguous duplicates instead of deleting vehicles.
 
@@ -431,3 +432,13 @@ Open Vehicle stock, filter Draft, edit the vehicle and complete **registration, 
 
 Migration 16 adds nullable draft import fields and activation validation while preserving existing stock/history. Future Auto Trader imports must explicitly use Draft and flag missing values for staff review. **The Auto Trader connector is not implemented yet.** Local validation: 124 tests, lint and typecheck passed.
 Draft-stock live verification: Vercel Production commit a6c35b7 reported Ready. The Add Vehicle form defaulted to Draft; switching to Available made registration/make/model/year/mileage required while VIN remained optional. Draft filtering loaded correctly with zero records. No vehicle was saved during verification. Production build passed; migration 16 is already applied to the existing Hydra project.
+
+## Import from Auto Trader option
+
+Vehicle stock now has **Import from Auto Trader** next to Add vehicle. It opens `/dashboard/vehicles/import`, with **Not connected** shown for the direct API. The owner has not confirmed approved Auto Trader Connect Stock Sync access. Direct fetching, automatic synchronization and media download are not implemented/enabled; no credentials are requested in the browser. Request Stock Sync API access, advertiser ID and integration approval through the Auto Trader account manager, then arrange a server-only integration. A public advert or dealer page alone is not API authorization.
+
+A separate **authorized stock CSV** import is available now if Auto Trader or the stock provider supplies a file (no claim is made that every account offers CSV export). Upload a UTF-8 comma-separated file, review the preview/missing fields, confirm it contains authorized Hydra stock, then click **Import as Drafts**. Supported headers: `stock_id,registration,make,model,year,mileage,vin`; aliases include `autotrader_stock_id`, `reg_number`, `model_year`. Maximum 200 vehicles/1 MB. Quote values containing commas, such as mileage `"10,000"`. Other columns, photos, prices and costs are not imported.
+
+Each row must have a stable stock ID, registration or VIN; other details may be missing. Existing matches by stock ID, normalized registration or VIN are skipped without changing or relinking existing vehicles. Repeated imports therefore do not add the same identifiable vehicle twice. The protected RPC runs the batch transactionally, always forces Draft status, ignores supplied internal IDs/status/costs and preserves the stock-write/read permission checks and audit trail. Invalid rows block the batch; network errors tell staff to check Draft stock before retrying. Edit the imported Drafts, fill required details, then mark Available. No invoices, payments or stock costs are created by import.
+
+Migration 17 adds the external stock ID and import RPC. Automated checks cover CSV validation/limits, missing fields, escaped values, duplicates, rollback and permissions. Local validation: 142 tests, lint, typecheck and production build passed. No Hydra vehicles have been imported during implementation.
