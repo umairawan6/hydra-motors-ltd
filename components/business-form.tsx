@@ -2,7 +2,7 @@
 import { useActionState, useState } from 'react';
 import { SubmitButton } from './submit-button';
 import type { ActionState } from '../lib/validation';
-export type FormField = { name: string; label: string; type?: 'text'|'email'|'date'|'number'|'checkbox'|'textarea'|'select'|'hidden'; required?: boolean; value?: string; options?: { value: string; label: string }[]; hint?: string; maxLength?: number };
+export type FormField = { name: string; label: string; type?: 'text'|'email'|'date'|'number'|'checkbox'|'textarea'|'select'|'hidden'; required?: boolean; value?: string; options?: { value: string; label: string; price?:string }[]; hint?: string; maxLength?: number };
 export function BusinessForm({ action, fields, submit='Save', description, controlled }: { action: (state: ActionState, form: FormData) => Promise<ActionState>; fields: FormField[]; submit?: string; description?: string; controlled?: {values:Record<string,string>;onChange:(values:Record<string,string>)=>void} }) {
   const [state, formAction] = useActionState(action, {});
   const [ownValues, setValues] = useState<Record<string,string>>(() => Object.fromEntries(fields.map(field => [field.name,field.value ?? ''])));

@@ -15,7 +15,7 @@ it('accepts escaped quotes and newlines within quoted CSV fields',()=>{
 });
 it.each(['reg,registration\nA,B','hello,unknown\na,b','registration,year\nTEST1,1800','registration,mileage\nTEST1,-1','make,model\nExample,Car','registration,model\nTEST1,"Unclosed','registration,model\nTEST1,"Closed"extra','registration,model\nTEST1,Car,extra'])('rejects invalid CSV %s',input=>{expect(()=>parseStockCsv(input)).toThrow();});
 it('limits batch rows and bytes',()=>{expect(()=>parseStockCsv('registration\n'+Array.from({length:201},(_,n)=>`TEST${n}`).join('\n'))).toThrow('200');expect(()=>parseStockCsv('x'.repeat(MAX_IMPORT_BYTES+1))).toThrow('1 MB');});
-it('imports incomplete authorized stock as drafts and ignores forged status/IDs/prices',async()=>{await asStaff(db,staff.admin,async sql=>{
+it('imports incomplete authorized stock as drafts and ignores forged status/IDs/costs',async()=>{await asStaff(db,staff.admin,async sql=>{
   expect(await run(sql,[{stock_id:'at-only',status:'available',id:staff.admin,purchase_cost:10000}])).toEqual({imported:1,skipped:0});
   expect((await sql.query('select autotrader_stock_id,status,registration,make from vehicles')).rows).toEqual([{autotrader_stock_id:'at-only',status:'draft',registration:null,make:null}]);
   expect((await sql.query('select * from vehicle_costs')).rows).toHaveLength(0);
@@ -34,3 +34,25 @@ it('requires read as well as write permission and rejects unidentified rows',asy
   await db.exec('begin');try{await db.exec("delete from role_permissions where role_key='sales' and permission_key='stock.read'");await db.query("select set_config('request.jwt.claim.sub',$1,true)",[staff.sales]);await db.exec('set local role authenticated');await expect(run(db,[car])).rejects.toThrow('Access denied');}finally{await db.exec('rollback');}
   await expect(asStaff(db,staff.admin,sql=>run(sql,[{make:'Unidentified'}]))).rejects.toThrow('requires a stock ID');
 });
+
+it('imports advertised prices and gearboxes without creating restricted costs',async()=>{await asStaff(db,staff.admin,async sql=>{
+  const rows=parseStockCsv('stock_id,price,gearbox\nat-price,"£12,250.50",Auto');
+  expect(rows[0]).toMatchObject({asking_price:'12250.50',gearbox:'automatic'});
+  await run(sql,rows);
+  expect((await sql.query('select asking_price::text,gearbox,status from vehicles')).rows).toEqual([{asking_price:'12250.50',gearbox:'automatic',status:'draft'}]);
+  expect((await sql.query('select * from vehicle_costs')).rows).toHaveLength(0);
+});});
+it.each(['-1','1.001','NaN','10000000000'])('rejects invalid imported price %s',async price=>{
+  expect(()=>parseStockCsv(`stock_id,price\nat-invalid,${price}`)).toThrow();
+  await expect(asStaff(db,staff.admin,sql=>run(sql,[{stock_id:'at-invalid',asking_price:price}]))).rejects.toThrow();
+});
+it('rejects unrecognized gearbox through CSV and direct RPC',async()=>{
+  expect(()=>parseStockCsv('stock_id,gearbox\nat-invalid,unknown')).toThrow();
+  await expect(asStaff(db,staff.admin,sql=>run(sql,[{stock_id:'at-invalid',gearbox:'unknown'}]))).rejects.toThrow();
+});
+it('preserves stock price and gearbox when archiving with an older payload',async()=>{await asStaff(db,staff.admin,async sql=>{
+  await run(sql,[{stock_id:'at-preserve',asking_price:'8250',gearbox:'manual'}]);
+  const id=(await sql.query<{id:string}>('select id from vehicles')).rows[0].id;
+  await sql.query('select save_vehicle($1::jsonb,1)',[JSON.stringify({id,status:'archived'})]);
+  expect((await sql.query('select asking_price::text,gearbox from vehicles')).rows[0]).toEqual({asking_price:'8250.00',gearbox:'manual'});
+});});

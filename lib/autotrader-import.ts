@@ -1,10 +1,10 @@
 import {z} from 'zod';
 export const MAX_IMPORT_ROWS=200;
 export const MAX_IMPORT_BYTES=1024*1024;
-export const importRowSchema=z.object({stock_id:z.string().trim().max(100).regex(/^[A-Za-z0-9_-]*$/),registration:z.string().trim().max(20),make:z.string().trim().max(80),model:z.string().trim().max(120),vin:z.string().trim().max(40),model_year:z.string().regex(/^(?:\d{4})?$/).refine(v=>!v || (Number(v)>=1900 && Number(v)<=2100)),mileage:z.string().regex(/^\d{0,9}$/)}).refine(v=>!!(v.stock_id || v.registration || v.vin),'Each row needs an Auto Trader stock ID, registration or VIN so retries can be matched.');
+export const importRowSchema=z.object({stock_id:z.string().trim().max(100).regex(/^[A-Za-z0-9_-]*$/),registration:z.string().trim().max(20),make:z.string().trim().max(80),model:z.string().trim().max(120),vin:z.string().trim().max(40),model_year:z.string().regex(/^(?:\d{4})?$/).refine(v=>!v || (Number(v)>=1900 && Number(v)<=2100)),asking_price:z.string().regex(/^(?:\d{1,10}(?:\.\d{1,2})?)?$/).default(''),gearbox:z.enum(['','automatic','manual']).default(''),mileage:z.string().regex(/^\d{0,9}$/)}).refine(v=>!!(v.stock_id || v.registration || v.vin),'Each row needs an Auto Trader stock ID, registration or VIN so retries can be matched.');
 export const importRowsSchema=z.array(importRowSchema).min(1).max(MAX_IMPORT_ROWS);
 export type ImportVehicle=z.infer<typeof importRowSchema>;
-const headers:Record<string,keyof ImportVehicle>={stockid:'stock_id',autotraderstockid:'stock_id',registration:'registration',registrationnumber:'registration',regnumber:'registration',reg:'registration',vrm:'registration',make:'make',model:'model',vin:'vin',year:'model_year',modelyear:'model_year',caryear:'model_year',mileage:'mileage'};
+const headers:Record<string,keyof ImportVehicle>={stockid:'stock_id',autotraderstockid:'stock_id',registration:'registration',registrationnumber:'registration',regnumber:'registration',reg:'registration',vrm:'registration',make:'make',model:'model',vin:'vin',year:'model_year',modelyear:'model_year',caryear:'model_year',mileage:'mileage',price:'asking_price',askingprice:'asking_price',advertisedprice:'asking_price',retailprice:'asking_price',gearbox:'gearbox',transmission:'gearbox'};
 export function missingVehicleFields(row:ImportVehicle) {return (['registration','make','model','model_year','mileage'] as const).filter(key=>!row[key]);}
 export function parseStockCsv(input:string):ImportVehicle[] {
   if(new TextEncoder().encode(input).length>MAX_IMPORT_BYTES) throw Error('Choose a CSV file no larger than 1 MB.');
@@ -23,9 +23,10 @@ export function parseStockCsv(input:string):ImportVehicle[] {
   const columns=records[0].map(name=>{const key=name.trim().toLowerCase().replace(/[\s_-]/g,'');return Object.hasOwn(headers,key) ? headers[key] : undefined;});
   const known=columns.filter(Boolean);if(!known.length || new Set(known).size!==known.length) throw Error('Use recognized, non-duplicate CSV headers.');
   return records.slice(1).map((values,index)=>{if(values.length!==columns.length) throw Error(`Row ${index+2}: column count does not match the headers.`);
-    const payload:ImportVehicle={stock_id:'',registration:'',make:'',model:'',model_year:'',mileage:'',vin:''};
+    const payload:Record<keyof ImportVehicle,string>={stock_id:'',registration:'',make:'',model:'',model_year:'',mileage:'',vin:'',asking_price:'',gearbox:''};
     columns.forEach((key,i)=>{if(key) payload[key]=values[i].trim();});
     payload.registration=payload.registration.replaceAll(' ','').toUpperCase();payload.vin=payload.vin.toUpperCase();payload.mileage=payload.mileage.replaceAll(',','');
-    const parsed=importRowSchema.safeParse(payload);if(!parsed.success) throw Error(`Row ${index+2}: ${parsed.error.issues[0].message}`);return parsed.data;
+    payload.asking_price=payload.asking_price.replace(/[£,\s]/g,'');const gearbox=payload.gearbox.toLowerCase().trim();if(gearbox==='auto' || gearbox==='automatic') payload.gearbox='automatic';else if(gearbox==='manual') payload.gearbox='manual';else if(gearbox==='') payload.gearbox='';
+    const parsed=importRowSchema.safeParse({...payload,gearbox:gearbox==='auto' ? 'automatic' : gearbox});if(!parsed.success) throw Error(`Row ${index+2}: ${parsed.error.issues[0].message}`);return parsed.data;
   });
 }

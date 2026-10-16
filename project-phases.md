@@ -29,6 +29,8 @@ Phase 6 implementation (15 October 2026): SQL aggregate report with inclusive Lo
 
 ## Validation fixtures
 
+Stock detail addition (16 October 2026): advertised GBP price and Automatic/Manual gearbox are editable stock fields and supported CSV columns. Available stock suggests a sale price while allowing invoice-specific edits; gearbox is snapshotted and printed at issuance. Migration 19 is applied; the 12 imported Drafts have verified advertised prices/gearboxes. Local validation: 156 tests, lint, typecheck and production build passed; PDF layout visually checked. Direct Auto Trader API sync remains disconnected.
+
 Invoice warranty addition (16 October 2026): sale drafts now offer optional 3/6/12-month warranty selection, validated by the protected RPC and captured in the immutable issuance snapshot. Customer PDFs print the selected duration; legacy/unspecified values are omitted. Migration 18 is applied to the existing Hydra Supabase project. Local checks: 146 tests, lint, typecheck and production build passed; the six-month sample was rendered and visually verified on one A4 page.
 
 Owner additions: phase 7A will add automatic customer invoice-copy email after issuance/PDF readiness, delivery status and duplicate-safe retry/resend; a sending provider/domain and approved delivery test are still required. Phase 7B will later add an optional thank-you/enjoy-your-car SMS with communication preferences, verified phone/sender, duplicate prevention and agreed cost limits. These are planned, not implemented or activated. Phase 8 reviews communication access/secrets/webhooks; phase 9 reviews operational delivery monitoring/recovery. Phases 8–9 remain the final two phases.

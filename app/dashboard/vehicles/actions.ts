@@ -6,7 +6,7 @@ import { requireStaff } from '../../../lib/auth/session';
 import { vehicleSchema,costSchema,formStrings,versionInput,safeDatabaseError } from '../../../lib/business/validation';
 import type { ActionState } from '../../../lib/validation';
 export async function saveVehicle(_state:ActionState,form:FormData):Promise<ActionState> {
-  const {db}=await requireStaff('stock.write'); const parsed=vehicleSchema.safeParse(formStrings(form,['registration','vin','make','model','model_year','mileage','purchase_date','status'])); const id=String(form.get('id') ?? ''); const version=versionInput(form);
+  const {db}=await requireStaff('stock.write'); const parsed=vehicleSchema.safeParse(formStrings(form,['registration','vin','make','model','model_year','mileage','purchase_date','status','asking_price','gearbox'])); const id=String(form.get('id') ?? ''); const version=versionInput(form);
   if(!parsed.success || (id && !z.uuid().safeParse(id).success) || version<0) return {error:parsed.success ? 'Invalid record identifier.' : parsed.error.issues[0].message};
   const {data,error}=await db.rpc('save_vehicle',{payload:{...parsed.data,id},expected_version:version}); if(error) return {error:safeDatabaseError(error)};
   revalidatePath('/dashboard/vehicles'); revalidatePath('/dashboard'); redirect(`/dashboard/vehicles/${data}?saved=1`);

@@ -2,7 +2,8 @@
 import {useState,useTransition,type FormEvent} from 'react';
 import {BusinessForm,type FormField} from './business-form';
 import {findSaleRecords,saveDraft} from '../app/dashboard/sales/actions';
-type Option={value:string;label:string};
+import {suggestVehiclePrice} from '../lib/sale-price';
+type Option={value:string;label:string;price?:string};
 export function SaleDraftForm({fields}:{fields:FormField[]}) {
   const [values,setValues]=useState<Record<string,string>>(()=>Object.fromEntries(fields.map(f=>[f.name,f.value ?? ''])));
   const initial=(name:string)=>fields.find(f=>f.name===name)?.options ?? [];
@@ -21,11 +22,11 @@ export function SaleDraftForm({fields}:{fields:FormField[]}) {
         };
         setCustomers(previous=>retain(result.customers,previous,values.customer_id));
         setVehicles(previous=>retain(result.vehicles,previous,values.vehicle_id));
-        setValues(previous=>({...previous,customer_id:String(form.get('customer_search') ?? '').trim() && result.customers.length===1 ? result.customers[0].value : previous.customer_id,vehicle_id:String(form.get('vehicle_search') ?? '').trim() && result.vehicles.length===1 ? result.vehicles[0].value : previous.vehicle_id}));
+        setValues(previous=>suggestVehiclePrice(previous,{...previous,customer_id:String(form.get('customer_search') ?? '').trim() && result.customers.length===1 ? result.customers[0].value : previous.customer_id,vehicle_id:String(form.get('vehicle_search') ?? '').trim() && result.vehicles.length===1 ? result.vehicles[0].value : previous.vehicle_id},vehicles,result.vehicles));
         setMessage(result.customers.length+' customer matches; '+result.vehicles.length+' vehicle matches. One match is selected automatically. Up to 50 of each are shown; refine your search if needed. Existing selections are retained when outside the results.');
       } catch {setError('Unable to search records. Check your connection and try again.');}
     });
   }
   const draftFields=fields.map(f=>f.name==='customer_id' ? {...f,options:customers} : f.name==='vehicle_id' ? {...f,options:vehicles} : f);
-  return <><form onSubmit={find} className="list-controls" aria-label="Find sale records"><label>Customer name<input name="customer_search" maxLength={100} disabled={pending} /></label><label>Vehicle registration<input name="vehicle_search" maxLength={100} disabled={pending} /></label><button type="submit" className="button secondary" disabled={pending}>{pending ? 'Finding records…' : 'Find records'}</button></form>{message && <p className="alert success" role="status">{message}</p>}{error && <p className="alert danger" role="alert">{error}</p>}<fieldset disabled={pending} style={{border:0,padding:0,margin:0,minWidth:0}}><BusinessForm action={saveDraft} fields={draftFields} submit="Save draft" controlled={{values,onChange:setValues}} description="Select a customer and an available vehicle below. Finding records keeps your entered prices and charges." /></fieldset></>;
+  return <><form onSubmit={find} className="list-controls" aria-label="Find sale records"><label>Customer name<input name="customer_search" maxLength={100} disabled={pending} /></label><label>Vehicle registration<input name="vehicle_search" maxLength={100} disabled={pending} /></label><button type="submit" className="button secondary" disabled={pending}>{pending ? 'Finding records…' : 'Find records'}</button></form>{message && <p className="alert success" role="status">{message}</p>}{error && <p className="alert danger" role="alert">{error}</p>}<fieldset disabled={pending} style={{border:0,padding:0,margin:0,minWidth:0}}><BusinessForm action={saveDraft} fields={draftFields} submit="Save draft" controlled={{values,onChange:next=>setValues(previous=>suggestVehiclePrice(previous,next,vehicles,vehicles))}} description="Select a customer and an available vehicle below. Selecting a vehicle suggests its stock price. You can edit the sale price; a custom price is retained when finding records." /></fieldset></>;
 }

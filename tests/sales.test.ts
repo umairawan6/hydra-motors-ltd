@@ -7,6 +7,13 @@ beforeAll(async()=>{db=await database(); await db.query("insert into customers(i
 afterAll(async()=>await db?.close());
 async function issued(sql:PGlite) {const draft=await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'})]); const sale=draft.rows[0].id; const key=randomUUID(); const invoice=await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[sale,key]); return {sale,invoice:invoice.rows[0].id,key};}
 describe('transactional sales',()=>{
+  it('snapshots gearbox while allowing an independent invoice price',async()=>{await asStaff(db,staff.admin,async sql=>{
+    await sql.query("select save_vehicle($1::jsonb,1)",[JSON.stringify({id:vehicle,registration:'TEST01',make:'Test',model:'Car',model_year:2024,mileage:10000,status:'available',asking_price:'12000',gearbox:'automatic'})]);
+    const {invoice}=await issued(sql);
+    const snapshot=(await sql.query<{snapshot:{total:number;vehicle:{gearbox:string}}}>('select snapshot from invoices where id=$1',[invoice])).rows[0].snapshot;
+    expect(snapshot.total).toBe(10000);expect(snapshot.vehicle.gearbox).toBe('automatic');
+    expect((await sql.query<{asking_price:string}>('select asking_price from vehicles where id=$1',[vehicle])).rows[0].asking_price).toBe('12000.00');
+  });});
   it.each([3,6,12])('preserves %s month warranty through draft editing and immutable issuance',async months=>{
     await asStaff(db,staff.admin,async sql=>{
       const payload={customer_id:customer,vehicle_id:vehicle,list_price:'10000',warranty_months:String(months)};

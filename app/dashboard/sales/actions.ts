@@ -14,7 +14,7 @@ export async function findSaleRecords(customerSearch:string,vehicleSearch:string
   const vehicle=searchInput(typeof vehicleSearch==='string' ? vehicleSearch : '').replaceAll(' ','');
   const [customers,vehicles]=await Promise.all([
     db.from('customers').select('id,full_name').eq('archived',false).ilike('full_name',`%${customer}%`).order('full_name').order('id').limit(50),
-    db.from('vehicles').select('id,registration,make,model').in('status',['available','reserved']).ilike('registration',`%${vehicle}%`).order('registration').order('id').limit(50),
+    db.from('vehicles').select('id,registration,make,model,asking_price').in('status',['available','reserved']).ilike('registration',`%${vehicle}%`).order('registration').order('id').limit(50),
   ]);
   if(customers.error || vehicles.error) return {error:'Unable to find customers or available stock.',customers:[],vehicles:[]};
   return {customers:(customers.data ?? []).map(item=>({value:item.id,label:item.full_name})),vehicles:(vehicles.data ?? []).map(item=>({value:item.id,label:`${item.registration} · ${item.make} ${item.model}`})),error:''};
