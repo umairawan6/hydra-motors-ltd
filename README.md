@@ -424,7 +424,11 @@ Phase 6 release verified on the live production domain (commit 3e1aa5e): reports
 Phase 7 local evidence: 110 tests, lint, typecheck and production build passed. The new full-workflow fixture rolls back its database changes; it does not issue a cloud invoice or make a real payment. Hosted acceptance remains tracked separately in docs/release-readiness.md.
 Hosted Phase 7 checks passed at commit cb67cf8: https://github.com/umairawan6/hydra-motors-ltd/actions/runs/38771941579. The Linux runner completed npm ci, all 110 tests, lint/typecheck and production build without Supabase/Vercel credentials. The initial lockfile failure was repaired by adding only the two missing transitive entries; direct dependency versions are unchanged.
 
-## Draft vehicle stock
+## Invoice warranty
+
+On **Sales & invoices → Create sale**, choose **3 months**, **6 months** or **12 months** in Warranty, then save the draft. The default is **Not specified**; no warranty is assumed. The selection remains editable while the sale is a draft and is captured permanently at issuance. Customer invoice PDFs show the selected duration under vehicle details; unspecified/legacy warranties are omitted. Existing issued documents are unchanged. Migration `20261016122644_invoice_warranty.sql` adds the nullable constrained duration and updates the existing protected draft/issue RPCs without changing permission grants. Validation: 146 tests, lint, typecheck and production build passed; a six-month sample was rendered and visually checked on one A4 page.
+
+## Draft vehicle stock workflow
 
 New vehicles default to **Draft**. Drafts can have missing registration, make, model, year or mileage; missing data stays empty rather than being invented. VIN is optional for every status. There is one **Year** field for the car/model year, separate from the existing purchase-date field. The stock list shows year and has a Draft filter.
 
@@ -434,6 +438,8 @@ Migration 16 adds nullable draft import fields and activation validation while p
 Draft-stock live verification: Vercel Production commit a6c35b7 reported Ready. The Add Vehicle form defaulted to Draft; switching to Available made registration/make/model/year/mileage required while VIN remained optional. Draft filtering loaded correctly with zero records. No vehicle was saved during verification. Production build passed; migration 16 is already applied to the existing Hydra project.
 
 ## Import from Auto Trader option
+
+One-time stock import (16 October 2026): the owner's requested public Auto Trader listings were transcribed to CSV, validated with the existing parser and imported using the protected transactional RPC. The live Hydra Motors Limited retailer page (retailer 10047138, Slough) showed **12 adverts**, rather than the previously mentioned 14; all 12 were imported as Drafts, with zero skipped. Make, model/variant, advertised year and mileage are populated. Registration and VIN were unavailable in the listing facts and remain empty; complete registration and review each record before marking Available. Public advert IDs use the `advert-` prefix for duplicate matching; they are not verified Connect API stock IDs. No prices, costs or photos were imported. This was a one-time import, not automatic synchronization. Source: https://www.autotrader.co.uk/dealers/buckinghamshire/slough/hydra-motors-limited-10047138 . The local CSV is `output/hydra-autotrader-2026-10-16.csv`.
 
 Vehicle stock now has **Import from Auto Trader** next to Add vehicle. It opens `/dashboard/vehicles/import`, with **Not connected** shown for the direct API. The owner has not confirmed approved Auto Trader Connect Stock Sync access. Direct fetching, automatic synchronization and media download are not implemented/enabled; no credentials are requested in the browser. Request Stock Sync API access, advertiser ID and integration approval through the Auto Trader account manager, then arrange a server-only integration. A public advert or dealer page alone is not API authorization.
 

@@ -9,6 +9,7 @@ export const invoiceSnapshotSchema=z.object({
   document_number:z.string(),invoice_type:z.enum(['customer','credit','finance']),issued_at:z.string(),total:z.number().nonnegative(),
   company:z.object({company_name:z.string(),address:z.string(),registration_number:z.string(),email:z.string(),phone:z.string(),payment_details:z.string(),terms:z.string()}),
   customer:party,vehicle:z.object({registration:z.string(),vin:z.string().nullable(),make:z.string(),model:z.string(),model_year:z.number().nullable(),mileage:z.number().nullable()}),
+  warranty_months:z.union([z.literal(3),z.literal(6),z.literal(12)]).nullable().optional(),
   list_price:z.number(),discount:z.number(),fees:z.number(),fee_description:z.string(),supply_date:z.string(),
   credit_reason:z.string().optional(),original_number:z.string().optional(),provider:party.optional(),source_number:z.string().optional(),due_date:z.string().optional(),
 });
@@ -87,6 +88,7 @@ export function InvoiceDocument({snapshot:s}:{snapshot:InvoiceSnapshot}) {
           <Detail label="Registration" value={s.vehicle.registration} />
           <Detail label="Chassis / VIN" value={s.vehicle.vin ?? 'Not recorded'} />
           <Detail label="Mileage" value={s.vehicle.mileage?.toLocaleString('en-GB') ?? 'Not recorded'} />
+          {s.invoice_type==='customer' && s.warranty_months && <Detail label="Warranty" value={`${s.warranty_months} months`} />}
           {s.invoice_type==='finance' && <><Text style={styles.line}>Customer: {s.customer.full_name}</Text><Text style={styles.line}>Sale invoice: {s.source_number}</Text></>}
           {s.original_number && <Text style={styles.line}>Original invoice: {s.original_number}</Text>}
         </View>

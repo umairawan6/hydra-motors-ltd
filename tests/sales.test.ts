@@ -7,6 +7,19 @@ beforeAll(async()=>{db=await database(); await db.query("insert into customers(i
 afterAll(async()=>await db?.close());
 async function issued(sql:PGlite) {const draft=await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'})]); const sale=draft.rows[0].id; const key=randomUUID(); const invoice=await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[sale,key]); return {sale,invoice:invoice.rows[0].id,key};}
 describe('transactional sales',()=>{
+  it.each([3,6,12])('preserves %s month warranty through draft editing and immutable issuance',async months=>{
+    await asStaff(db,staff.admin,async sql=>{
+      const payload={customer_id:customer,vehicle_id:vehicle,list_price:'10000',warranty_months:String(months)};
+      const sale=(await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify(payload)])).rows[0].id;
+      await sql.query('select save_sale_draft($1::jsonb,1)',[JSON.stringify({...payload,id:sale})]);
+      const invoice=(await sql.query<{id:string}>('select issue_sale($1,2,$2) id',[sale,randomUUID()])).rows[0].id;
+      expect((await sql.query<{snapshot:{warranty_months:number}}>('select snapshot from invoices where id=$1',[invoice])).rows[0].snapshot.warranty_months).toBe(months);
+      await expect(sql.query('select save_sale_draft($1::jsonb,3)',[JSON.stringify({...payload,id:sale,warranty_months:'6'})])).rejects.toThrow();
+    });
+  });
+  it('rejects unsupported warranty durations through the direct RPC',async()=>{
+    await expect(asStaff(db,staff.admin,sql=>sql.query('select save_sale_draft($1::jsonb,0)',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',warranty_months:'24'})]))).rejects.toThrow('Invalid warranty duration');
+  });
   it('edits a draft, removes it with history and releases its vehicle for a new draft',async()=>{
     await asStaff(db,staff.admin,async sql=>{
       const payload={customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'};
