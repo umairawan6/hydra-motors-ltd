@@ -56,3 +56,18 @@ it('preserves stock price and gearbox when archiving with an older payload',asyn
   await sql.query('select save_vehicle($1::jsonb,1)',[JSON.stringify({id,status:'archived'})]);
   expect((await sql.query('select asking_price::text,gearbox from vehicles')).rows[0]).toEqual({asking_price:'8250.00',gearbox:'manual'});
 });});
+
+it.each(['Petrol','Diesel','Hybrid','Diesel hybrid','Electric'])('imports and preserves fuel type %s',async label=>{await asStaff(db,staff.admin,async sql=>{
+  const rows=parseStockCsv(`stock_id,fuel_type\nat-fuel,${label}`);
+  const expected=label.toLowerCase().replace(' ','_');expect(rows[0].fuel_type).toBe(expected);
+  await run(sql,rows);
+  const vehicle=(await sql.query<{id:string;fuel_type:string}>('select id,fuel_type from vehicles')).rows[0];expect(vehicle.fuel_type).toBe(expected);
+  await sql.query('select save_vehicle($1::jsonb,1)',[JSON.stringify({id:vehicle.id,status:'archived'})]);
+  expect((await sql.query<{fuel_type:string}>('select fuel_type from vehicles')).rows[0].fuel_type).toBe(expected);
+  await sql.query('select save_vehicle($1::jsonb,2)',[JSON.stringify({id:vehicle.id,status:'draft',fuel_type:''})]);
+  expect((await sql.query<{fuel_type:string|null}>('select fuel_type from vehicles')).rows[0].fuel_type).toBeNull();
+});});
+it('rejects unsupported fuel types through CSV and direct RPC',async()=>{
+  expect(()=>parseStockCsv('stock_id,fuel_type\nat-fuel,unknown')).toThrow();
+  await expect(asStaff(db,staff.admin,sql=>run(sql,[{stock_id:'at-fuel',fuel_type:'unknown'}]))).rejects.toThrow('Invalid fuel type');
+});

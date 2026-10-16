@@ -443,6 +443,8 @@ Draft-stock live verification: Vercel Production commit a6c35b7 reported Ready. 
 
 ### Stock prices and gearboxes (16 October 2026)
 
+Fuel type is also available in stock add/edit screens and the stock table: **Petrol, Diesel, Hybrid, Diesel hybrid, Electric**, with **Not recorded** for missing information. CSV imports accept `fuel_type` (alias `fuel`), case-insensitively; `Diesel hybrid`, `diesel-hybrid` and `diesel_hybrid` map to the same value. Existing vehicles remain blank until confirmed rather than guessing fuel. Migration 20 (`20261016151612_vehicle_fuel_type.sql`) validates the field in the protected save/import RPCs and preserves it when older archive/save payloads omit it. This field is for stock; invoice contents are unchanged.
+
 Stock supports make, model, year, registration, optional VIN, mileage, **Advertised price (£)** and **Gearbox (Automatic/Manual)**. Price and gearbox may remain blank while details are being completed. Advertised price is visible with stock-read permission and is separate from restricted purchase/preparation costs. The stock table shows both new fields.
 
 CSV imports now accept `price` (aliases `asking_price`, `advertised_price`, `retail_price`) and `gearbox` (alias `transmission`). Prices are GBP, non-negative, up to two decimal places; quoted pound signs/thousands separators are accepted. Gearbox accepts auto/automatic/manual, case-insensitively. Preview shows both values; existing matching stock is still skipped without overwriting. Direct Stock Sync remains disconnected.
