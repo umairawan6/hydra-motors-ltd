@@ -29,6 +29,8 @@ Phase 6 implementation (15 October 2026): SQL aggregate report with inclusive Lo
 
 ## Validation fixtures
 
+Invoice warranty addition (16 October 2026): sale drafts now offer optional 3/6/12-month warranty selection, validated by the protected RPC and captured in the immutable issuance snapshot. Customer PDFs print the selected duration; legacy/unspecified values are omitted. Migration 18 is applied to the existing Hydra Supabase project. Local checks: 146 tests, lint, typecheck and production build passed; the six-month sample was rendered and visually verified on one A4 page.
+
 Owner additions: phase 7A will add automatic customer invoice-copy email after issuance/PDF readiness, delivery status and duplicate-safe retry/resend; a sending provider/domain and approved delivery test are still required. Phase 7B will later add an optional thank-you/enjoy-your-car SMS with communication preferences, verified phone/sender, duplicate prevention and agreed cost limits. These are planned, not implemented or activated. Phase 8 reviews communication access/secrets/webhooks; phase 9 reviews operational delivery monitoring/recovery. Phases 8–9 remain the final two phases.
 
 Testing maintenance (15 October 2026): added an administrator-only test reset with explicit confirmation, matching-project environment gate and database switch. Migration 20261015152512 was applied to the owner's confirmed test database and its switch enabled. Transactional business cleanup preserves staff/settings/number counters; durable Storage cleanup supports retry. No live reset was executed. Local validation: 93 tests, lint, typecheck and build passed. At that checkpoint, phases 6–7 remained pending.

@@ -430,6 +430,8 @@ On **Sales & invoices → Create sale**, choose **3 months**, **6 months** or **
 
 ## Draft vehicle stock workflow
 
+Warranty release verification: Vercel Production `11fff65` reported Ready. The authenticated Create customer sale page displayed Not specified/3/6/12-month choices, and selecting six months worked. No live sale or invoice was created during verification; persistence and issuance were verified in the transactional database tests. Migration 18 is applied to the existing Hydra project; anonymous draft RPC execution remains denied.
+
 New vehicles default to **Draft**. Drafts can have missing registration, make, model, year or mileage; missing data stays empty rather than being invented. VIN is optional for every status. There is one **Year** field for the car/model year, separate from the existing purchase-date field. The stock list shows year and has a Draft filter.
 
 Open Vehicle stock, filter Draft, edit the vehicle and complete **registration, make, model, year and mileage**, then choose **Available** and save. Zero mileage is valid. Required fields react to the selected status and are validated again on the server/database RPC. Known registrations/VINs retain normalized uniqueness. Drafts cannot be selected for sales or issued through sale RPCs. Incomplete drafts may be archived and restored to Draft; Available/Reserved require complete details. Stock-write permission and stale-edit protection remain.
