@@ -29,6 +29,8 @@ Phase 6 implementation (15 October 2026): SQL aggregate report with inclusive Lo
 
 ## Validation fixtures
 
+Customer licence addition (17 October 2026): private front/back JPG/PNG/WebP uploads and mobile capture option, 3 MB per side, administrator-only default access through separate grantable permissions. Metadata and Storage have independent RLS; protected no-store viewing and explicit removal/replacement are provided. Migration 21 also extends the existing guarded test-reset cleanup to include licence files. Phase 8 includes deciding identity-document retention/removal rules; Phase 9 includes testing recovery of private objects together with database links. Automatic retention expiry is not implemented.
+
 Fuel type addition (16 October 2026): stock forms/table and CSV preview/import support Petrol, Diesel, Hybrid, Diesel hybrid and Electric. Missing values remain optional; protected database mutations reject unsupported values and preserve fuel on older save/archive calls. Migration 20 adds the nullable constrained field without changing permissions.
 
 Stock detail addition (16 October 2026): advertised GBP price and Automatic/Manual gearbox are editable stock fields and supported CSV columns. Available stock suggests a sale price while allowing invoice-specific edits; gearbox is snapshotted and printed at issuance. Migration 19 is applied; the 12 imported Drafts have verified advertised prices/gearboxes. Local validation: 156 tests, lint, typecheck and production build passed; PDF layout visually checked. Direct Auto Trader API sync remains disconnected.

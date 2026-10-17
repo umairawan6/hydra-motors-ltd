@@ -18,6 +18,7 @@ export type Database = {
       roles: Table<{ key: string; name: string; system_role: boolean; created_at: string }>;
       permissions: Table<{ key: string; description: string }>;
       role_permissions: Table<{ role_key: string; permission_key: string }>;
+      customer_licence_images:Table<{id:string;customer_id:string;side:'front'|'back';path:string;ready:boolean;created_at:string}>;
       customers: Table<{ id: string; full_name: string; email: string | null; phone: string | null; address: string | null; created_at: string; archived:boolean; version:number; updated_at:string }>;
       vehicles: Table<{ autotrader_stock_id:string|null;asking_price:number|null;gearbox:'automatic'|'manual'|null;fuel_type:'petrol'|'diesel'|'hybrid'|'diesel_hybrid'|'electric'|null; id: string; registration: string | null; vin: string | null; make: string | null; model: string | null; model_year: number | null; mileage: number | null; created_at: string; status:string; purchase_date:string|null; version:number; updated_at:string }>;
       vehicle_costs: Table<{ vehicle_id: string; purchase_cost: number; preparation_cost: number; other_cost: number; updated_at: string; version:number }>;

@@ -1,5 +1,6 @@
 export const permissionLabels = {
   'customers.read': 'Read customers', 'customers.write': 'Manage customers',
+  'customers.licence_read':'View customer driving licence images', 'customers.licence_manage':'Upload/remove customer driving licence images',
   'stock.read': 'Read vehicles', 'stock.write': 'Manage vehicles',
   'costs.read': 'Read vehicle costs', 'costs.write': 'Manage vehicle costs',
   'sales.read_all': 'Read all sales', 'sales.write': 'Manage sale drafts',

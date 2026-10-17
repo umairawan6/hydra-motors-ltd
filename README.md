@@ -424,7 +424,25 @@ Phase 6 release verified on the live production domain (commit 3e1aa5e): reports
 Phase 7 local evidence: 110 tests, lint, typecheck and production build passed. The new full-workflow fixture rolls back its database changes; it does not issue a cloud invoice or make a real payment. Hosted acceptance remains tracked separately in docs/release-readiness.md.
 Hosted Phase 7 checks passed at commit cb67cf8: https://github.com/umairawan6/hydra-motors-ltd/actions/runs/38771941579. The Linux runner completed npm ci, all 110 tests, lint/typecheck and production build without Supabase/Vercel credentials. The initial lockfile failure was repaired by adding only the two missing transitive entries; direct dependency versions are unchanged.
 
-## Invoice warranty
+## Customer driving licence images
+
+1. Create/save a customer, then open their customer record. Authorized staff see a **Driving licence** section with separate **Front** and **Back** panels.
+2. Choose **Choose image** to upload a file, or **Take photo** to request the rear camera on supported mobile browsers. Desktop browsers may show a file picker instead. Each side accepts JPG/PNG/WebP up to **3 MB**; HEIC and PDF are unsupported. The limit leaves room within the cloud request-size limit.
+3. Select/capture the image, then click **Upload front image** or **Upload back image**. Each side is saved independently. Use **View front/back image** to open the protected image; it is not embedded in customer lists or invoice PDFs.
+4. To replace a side, confirm **Permanently remove** and click **Remove image**, then upload its replacement. Removal deletes the Storage object first, followed by its database entry. Failed/incomplete uploads have a cleanup/retry path. Archiving a customer retains the existing images and disables new uploads; it does not delete identity documents automatically.
+5. Access defaults to **administrators only**. In Roles & permissions, an administrator may explicitly grant **View customer driving licence images** and **Upload/remove customer driving licence images** to another role. Customer-read permission is also required; upload/removal additionally requires licence-read permission. Ordinary customer/stock access does not grant licence access.
+
+### How uploaded files are stored
+
+Actual image bytes are stored in **Supabase Storage**, rather than inside the customer or vehicle database row. Licence images use a new private bucket, `customer-licences`; vehicle photos use the existing private `vehicle-photos` bucket. There are no public licence URLs. The application serves licence images through an authenticated, permission-checked route with private/no-store caching, and Storage RLS independently enforces access.
+
+Postgres stores the link to each file. `customer_licence_images` contains an image ID, customer ID, front/back side, random object path, upload-ready flag and creation timestamp. A unique customer/side constraint allows one image per side. `vehicle_photos` links each photo ID/path to its vehicle and allows multiple photos. Storage maintains its own object metadata, including content type and size. File names use random IDs; original licence file names are not stored.
+
+Upload sequence: validate the staff session/permissions and file size/content signature → create a pending metadata row → upload into private Storage → mark the row ready. Only completed uploads are displayed as viewable images. Failed uploads are cleaned up where possible, otherwise shown as incomplete entries for retry/removal. No server secret is sent to the browser for these uploads. Licence images are not included in sale snapshots or invoices, and do not change MOT or Auto Trader behavior.
+
+Migration 21 (`20261017112510_customer_licence_images.sql`) creates the private bucket, constrained metadata table, separate permissions/RLS, and includes licence objects in the existing administrator test-reset cleanup job. Apply this migration before deploying the feature to a different Supabase project; do not rerun the starter schema. **No business reset is required.** Storage backups and database backups are separate concerns: recovery must restore both object files and their database links. Phase 8 must agree identity-document retention/removal rules; Phase 9 must verify recovery of both metadata and Storage objects. Automatic retention expiry is not implemented.
+
+## Invoice warranty workflow
 
 On **Sales & invoices → Create sale**, choose **3 months**, **6 months** or **12 months** in Warranty, then save the draft. The default is **Not specified**; no warranty is assumed. The selection remains editable while the sale is a draft and is captured permanently at issuance. Customer invoice PDFs show the selected duration under vehicle details; unspecified/legacy warranties are omitted. Existing issued documents are unchanged. Migration `20261016122644_invoice_warranty.sql` adds the nullable constrained duration and updates the existing protected draft/issue RPCs without changing permission grants. Validation: 146 tests, lint, typecheck and production build passed; a six-month sample was rendered and visually checked on one A4 page.
 
