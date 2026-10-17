@@ -7,6 +7,27 @@ beforeAll(async()=>{db=await database(); await db.query("insert into customers(i
 afterAll(async()=>await db?.close());
 async function issued(sql:PGlite) {const draft=await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',discount:'0',fees:'0'})]); const sale=draft.rows[0].id; const key=randomUUID(); const invoice=await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[sale,key]); return {sale,invoice:invoice.rows[0].id,key};}
 describe('transactional sales',()=>{
+  it.each(['cash','card','bank_transfer'])('captures %s without creating a payment receipt',async method=>{await asStaff(db,staff.admin,async sql=>{
+    const id=(await sql.query<{id:string}>('select save_sale_draft($1::jsonb,0) id',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',payment_method:method})])).rows[0].id;
+    const invoice=(await sql.query<{id:string}>('select issue_sale($1,1,$2) id',[id,randomUUID()])).rows[0].id;
+    expect((await sql.query<{snapshot:{payment_method:string}}> ('select snapshot from invoices where id=$1',[invoice])).rows[0].snapshot.payment_method).toBe(method);
+    expect((await sql.query('select id from payments where sale_id=$1',[id])).rows).toHaveLength(0);
+    expect((await sql.query<{balance:string}>('select sale_balance($1) balance',[id])).rows[0].balance).toBe('10000.00');
+  });});
+  it('rejects unsupported invoice payment methods',async()=>{
+    await expect(asStaff(db,staff.admin,sql=>sql.query('select save_sale_draft($1::jsonb,0)',[JSON.stringify({customer_id:customer,vehicle_id:vehicle,list_price:'10000',payment_method:'unsupported'})]))).rejects.toThrow('Invalid invoice payment method');
+  });
+  it('keeps issued full terms immutable when an administrator edits settings',async()=>{await asStaff(db,staff.admin,async sql=>{
+    const settings={company_name:'Test Motors',address:'Test address',registration_number:'TEST-123',email:'',phone:'',payment_details:'',terms:'Short wording',sale_terms:'Original full sale terms',approved:true};
+    await sql.query('select save_billing_settings($1::jsonb)',[JSON.stringify(settings)]);
+    const {invoice}=await issued(sql);
+    await sql.query('select save_billing_settings($1::jsonb)',[JSON.stringify({...settings,sale_terms:'Updated full sale terms'})]);
+    expect((await sql.query<{snapshot:{company:{sale_terms:string}}}>('select snapshot from invoices where id=$1',[invoice])).rows[0].snapshot.company.sale_terms).toBe('Original full sale terms');
+    expect((await sql.query<{sale_terms:string}>('select sale_terms from billing_settings')).rows[0].sale_terms).toBe('Updated full sale terms');
+  });});
+  it('denies non-administrator changes to full sale terms',async()=>{
+    await expect(asStaff(db,staff.manager,sql=>sql.query('select save_billing_settings($1::jsonb)',[JSON.stringify({sale_terms:'Changed'})]))).rejects.toThrow('Access denied');
+  });
   it('snapshots gearbox while allowing an independent invoice price',async()=>{await asStaff(db,staff.admin,async sql=>{
     await sql.query("select save_vehicle($1::jsonb,1)",[JSON.stringify({id:vehicle,registration:'TEST01',make:'Test',model:'Car',model_year:2024,mileage:10000,status:'available',asking_price:'12000',gearbox:'automatic'})]);
     const {invoice}=await issued(sql);

@@ -29,6 +29,8 @@ Phase 6 implementation (15 October 2026): SQL aggregate report with inclusive Lo
 
 ## Validation fixtures
 
+Invoice payment/terms addition (17 October 2026): Cash/Card/Bank transfer selection is saved in sale drafts and issue-time snapshots without recording receipts. Administrator settings now separate short invoice wording from the owner's full sale terms; the supplied text prints on a separate second page, with safe overflow for longer edits. Existing snapshots/PDFs retain original terms. Migration 22 preserves permission and issuance protections. Local checks: 178 tests, lint, typecheck and build passed; standard customer/finance/credit PDFs rendered as two pages and customer pages were visually verified.
+
 Customer licence addition (17 October 2026): private front/back JPG/PNG/WebP uploads and mobile capture option, 3 MB per side, administrator-only default access through separate grantable permissions. Metadata and Storage have independent RLS; protected no-store viewing and explicit removal/replacement are provided. Migration 21 also extends the existing guarded test-reset cleanup to include licence files. Phase 8 includes deciding identity-document retention/removal rules; Phase 9 includes testing recovery of private objects together with database links. Automatic retention expiry is not implemented.
 
 Fuel type addition (16 October 2026): stock forms/table and CSV preview/import support Petrol, Diesel, Hybrid, Diesel hybrid and Electric. Missing values remain optional; protected database mutations reject unsupported values and preserve fuel on older save/archive calls. Migration 20 adds the nullable constrained field without changing permissions.
