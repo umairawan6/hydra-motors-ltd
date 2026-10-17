@@ -42,6 +42,7 @@ it('allows explicit read-only delegation but denies uploads and immediately resp
   await db.query("select set_config('request.jwt.claim.sub',$1,true)",[staff.manager]);
   expect((await db.query('select id from customer_licence_images')).rows).toHaveLength(1);
   expect((await db.query("select name from storage.objects where bucket_id='customer-licences'")).rows).toHaveLength(1);
+  await db.exec('savepoint denied_upload');await expect(prepare(db,'back')).rejects.toThrow();await db.exec('rollback to savepoint denied_upload');
   await db.exec('reset role');await db.exec("delete from role_permissions where role_key='manager' and permission_key='customers.licence_read'");await db.exec('set local role authenticated');
   expect((await db.query('select id from customer_licence_images')).rows).toHaveLength(0);
  }finally{await db.exec('rollback');}
